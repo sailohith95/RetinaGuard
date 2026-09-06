@@ -75,7 +75,7 @@ async def get_demo_cases():
 
 
 @app.post("/api/analyze")
-async def analyze_image(
+def analyze_image(
     file: Optional[UploadFile] = File(None),
     demo_id: Optional[str] = Form(None),
     patient_id: Optional[str] = Form("PT-82910"),
@@ -86,7 +86,12 @@ async def analyze_image(
     Core screening endpoint: accepts an uploaded fundus scan or demo case ID,
     executes quality assessment, enhancement, structures, lesions, EXP-001 grading,
     Grad-CAM, recommendations, and report generation.
+    Executed as synchronous 'def' to offload CPU-bound inference to Starlette threadpool,
+    preventing event loop starvation.
     """
+    import time
+    print("[SCREENING] Image Upload/Read START")
+    t_upload_0 = time.time()
     target_path = None
     original_url = None
     demo_ref = None
@@ -135,6 +140,9 @@ async def analyze_image(
             detail="No fundus image provided. Upload an image file or select a built-in demo case."
         )
 
+    t_upload_1 = time.time()
+    print(f"[SCREENING] Image Upload/Read COMPLETE {t_upload_1 - t_upload_0:.2f}s")
+
     try:
         result = screening_service.run_screening(
             image_path=target_path,
@@ -144,8 +152,15 @@ async def analyze_image(
             eye=eye,
             demo_reference=demo_ref
         )
-        return JSONResponse(content=result)
+        print("[SCREENING] Response Serialization START")
+        t_ser_0 = time.time()
+        resp = JSONResponse(content=result)
+        print(f"[SCREENING] Response Serialization COMPLETE {time.time() - t_ser_0:.2f}s")
+        return resp
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"[SCREENING] ERROR in analyze_image: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Screening analysis failed: {str(e)}"

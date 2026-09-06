@@ -210,22 +210,45 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("exam_id", inputExamId.value || "EX-00412");
     formData.append("eye", selectEye.value || "Right (OD)");
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
     try {
       const resp = await fetch("/api/analyze", {
         method: "POST",
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       if (!resp.ok) {
-        const errorData = await resp.json();
-        throw new Error(errorData.detail || "Screening analysis failed.");
+        let errorMsg = `Server error (${resp.status} ${resp.statusText})`;
+        try {
+          const errorData = await resp.json();
+          if (errorData && errorData.detail) {
+            errorMsg = errorData.detail;
+          }
+        } catch (e) {
+          // Non-JSON response (e.g. Render 502/504 Bad Gateway HTML)
+          if (resp.status === 502 || resp.status === 504) {
+            errorMsg = "The server took too long to process the request or restarted (502/504 Gateway Timeout). Please try again.";
+          } else {
+            errorMsg = `Server returned status ${resp.status}. Please check your connection and image.`;
+          }
+        }
+        throw new Error(errorMsg);
       }
 
       currentAnalysis = await resp.json();
       renderAnalysisResults(currentAnalysis);
     } catch (err) {
-      alert("Error: " + err.message);
-      resetResults("Analysis error occurred.");
+      clearTimeout(timeoutId);
+      let displayErr = err.message;
+      if (err.name === "AbortError") {
+        displayErr = "Screening analysis timed out after 45 seconds. The server may be busy or the image requires more time. Please retry.";
+      }
+      alert("Screening Error: " + displayErr);
+      resetResults("Analysis halted: " + displayErr);
     } finally {
       btnAnalyze.disabled = false;
       analyzeSpinner.style.display = "none";
@@ -386,10 +409,17 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     } else if (layer === "heatmap") {
       layerLegend.style.display = "flex";
-      layerLegend.innerHTML = `
-        <span class="legend-item"><span class="legend-swatch" style="background:linear-gradient(to right, blue, cyan, yellow, red);"></span> Model Attention (Grad-CAM Saliency)</span>
-        <small style="color:#656d76; margin-left:6px;">Highlights neural decision regions (Explainability, not lesion segmentation)</small>
-      `;
+      if (currentOverlays[layer]) {
+        layerLegend.innerHTML = `
+          <span class="legend-item"><span class="legend-swatch" style="background:linear-gradient(to right, blue, cyan, yellow, red);"></span> Model Attention (Grad-CAM Saliency)</span>
+          <small style="color:#656d76; margin-left:6px;">Highlights neural decision regions (Explainability, not lesion segmentation)</small>
+        `;
+      } else {
+        layerLegend.innerHTML = `
+          <span class="legend-item" style="color:#cf222e;">⚠️ Saliency map unavailable for this scan.</span>
+          <small style="color:#656d76; margin-left:6px;">Primary ICDR classification & lesion findings remain 100% valid.</small>
+        `;
+      }
     } else if (layer === "vessels") {
       layerLegend.style.display = "flex";
       layerLegend.innerHTML = `

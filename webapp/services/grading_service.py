@@ -64,7 +64,10 @@ class GradingService:
         Runs deep learning inference and generates Grad-CAM heatmap.
         Uses production ONNX model (EXP-001) with PyTorch fallback.
         """
+        import time
         # 1. Forward pass (Primary: ONNX runtime, Fallback: PyTorch)
+        print("[SCREENING] ONNX Inference START")
+        t_onnx_0 = time.time()
         tensor = self.predictor.preprocessor.preprocess_for_inference(pil_image)
         if self.onnx_session is not None:
             ort_inputs = {self.onnx_input_name: tensor.cpu().numpy()}
@@ -76,28 +79,46 @@ class GradingService:
             with torch.no_grad():
                 logits = self.predictor.model(tensor.to(self.predictor.device))
                 probs = F.softmax(logits, dim=1).squeeze().cpu().numpy()
+        t_onnx_1 = time.time()
+        print(f"[SCREENING] ONNX Inference COMPLETE {t_onnx_1 - t_onnx_0:.2f}s")
 
         grade = int(np.argmax(probs))
         confidence = float(probs[grade])
         is_referable = bool(grade >= REFERRAL_THRESHOLD)
         conf_level = "High" if confidence >= 0.80 else ("Moderate" if confidence >= 0.50 else "Borderline")
 
-        # 2. True Grad-CAM generation
+        # 2. True Grad-CAM generation with hook-safe execution
+        print("[SCREENING] Grad-CAM START")
+        t_gcam_0 = time.time()
         gcam_url = None
+        gcam_available = False
+        gcam_error = None
+        gcam = None
         try:
             gcam = GradCAM(self.predictor.model)
             gcam_tensor = self.predictor.preprocessor.preprocess_for_inference(pil_image)
             heatmap, _ = gcam.generate(gcam_tensor, target_class=grade)
             overlay = gcam.overlay_on_image(pil_image, heatmap, alpha=0.48, colormap="jet")
-            gcam.remove_hooks()
 
             gcam_filename = f"{filename_prefix}_{int(np.random.randint(100000, 999999))}.png"
             gcam_path = self.output_dir / gcam_filename
             overlay.save(gcam_path)
             gcam_url = f"/outputs/{gcam_filename}"
+            gcam_available = True
         except Exception as e:
-            # Fallback if gradcam fails
+            # Fallback if gradcam fails - never fail entire screening
             gcam_url = None
+            gcam_available = False
+            gcam_error = str(e)
+            print(f"[SCREENING] Grad-CAM WARNING: explainability map skipped: {e}")
+        finally:
+            if gcam is not None:
+                try:
+                    gcam.remove_hooks()
+                except Exception:
+                    pass
+        t_gcam_1 = time.time()
+        print(f"[SCREENING] Grad-CAM COMPLETE {t_gcam_1 - t_gcam_0:.2f}s")
 
         # Build clean probabilities mapping
         class_probs = []
@@ -124,5 +145,7 @@ class GradingService:
             "model_version": "EXP-001",
             "architecture": "EfficientNet-B0 (Focal Loss, Balanced Sampling)",
             "gradcam_url": gcam_url,
+            "gradcam_available": gcam_available,
+            "gradcam_error": gcam_error,
             "gradcam_disclaimer": "Model Attention Map: Highlights spatial regions that contributed most strongly to the neural network prediction. This is an explainability tool, not a manual lesion segmentation."
         }

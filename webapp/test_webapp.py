@@ -230,6 +230,72 @@ class TestRetinaGuardWebApp(unittest.TestCase):
         self.assertEqual(a6.json()["screening_status"], "UNGRADABLE")
         self.assertTrue(a6.json()["safety_gate_triggered"])
 
+    # 16. Regression: Screening API returns a response promptly without hanging
+    def test_16_regression_screening_api_returns_response(self):
+        import time
+        t0 = time.time()
+        resp = client.post("/api/analyze", data={"demo_id": "case_1"})
+        elapsed = time.time() - t0
+        self.assertEqual(resp.status_code, 200)
+        self.assertLess(elapsed, 10.0, "Screening API must complete well under 10s")
+        data = resp.json()
+        self.assertIn("grading", data)
+        self.assertIn("grade", data["grading"])
+
+    # 17. Regression: Backend exceptions return structured error and do not hang
+    def test_17_regression_backend_exceptions_no_hang(self):
+        # Unknown demo case ID -> must return 400
+        resp1 = client.post("/api/analyze", data={"demo_id": "nonexistent_demo_xyz"})
+        self.assertEqual(resp1.status_code, 400)
+        self.assertIn("Unknown demo case ID", resp1.json()["detail"])
+
+        # Empty POST body -> must return 400
+        resp2 = client.post("/api/analyze", data={})
+        self.assertEqual(resp2.status_code, 400)
+        self.assertIn("No fundus image provided", resp2.json()["detail"])
+
+    # 18. Regression: Grad-CAM failure does not prevent screening result
+    def test_18_regression_gradcam_failure_fallback(self):
+        from unittest.mock import patch
+        from explainability.gradcam import GradCAM
+
+        # Mock GradCAM.generate to throw a simulated RuntimeError
+        with patch.object(GradCAM, "generate", side_effect=RuntimeError("Simulated GradCAM hook failure")):
+            resp = client.post("/api/analyze", data={"demo_id": "case_1"})
+            self.assertEqual(resp.status_code, 200, "API must return 200 even if GradCAM fails")
+            data = resp.json()
+            self.assertIn("grading", data)
+            self.assertFalse(data["grading"]["gradcam_available"])
+            self.assertIsNone(data["grading"]["gradcam_url"])
+            self.assertEqual(data["grading"]["grade"], 0)
+            self.assertIn("probabilities", data["grading"])
+
+    # 19. Regression: High resolution image clamping and memory safety
+    def test_19_regression_large_image_clamping(self):
+        img = cv2.imread(str(self.case1_path))
+        # Create 1568x1568 high-res image by tiling to preserve high-frequency features
+        large_img = np.tile(img, (7, 7, 1))
+        _, enc = cv2.imencode(".png", large_img)
+        files = {"file": ("large_fundus.png", io.BytesIO(enc.tobytes()), "image/png")}
+        resp = client.post("/api/analyze", files=files)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["image_info"]["width"], 1568)
+        self.assertEqual(data["image_info"]["height"], 1568)
+        self.assertEqual(data["screening_status"], "GRADABLE")
+        self.assertIsNotNone(data["grading"])
+        self.assertIn("grade", data["grading"])
+        self.assertTrue(data["grading"]["gradcam_available"])
+
+    # 20. Regression: Frontend code contains AbortController timeout & error clearing
+    def test_20_regression_frontend_timeout_and_error_handling(self):
+        js_path = ROOT / "webapp" / "static" / "js" / "app.js"
+        self.assertTrue(js_path.exists())
+        js_content = js_path.read_text(encoding="utf-8")
+        self.assertIn("AbortController", js_content, "Frontend must use AbortController")
+        self.assertIn("45000", js_content, "Frontend must configure screening timeout")
+        self.assertIn("processingOverlay.style.display = \"none\"", js_content, "Overlay must be cleared in finally")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

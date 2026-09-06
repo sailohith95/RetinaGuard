@@ -105,47 +105,51 @@ class GradCAM:
     ) -> Image.Image:
         """
         Blend Grad-CAM heatmap over original retinal image.
+        Uses fast, low-memory OpenCV blending (no float64 copies).
 
         Args:
             original_pil : original PIL image
             heatmap_np   : (h, w) float32 in [0, 1]
             alpha        : heatmap opacity
-            colormap     : matplotlib colormap name
+            colormap     : colormap name (defaults to jet)
 
         Returns:
             PIL Image with heatmap overlay
         """
-        import matplotlib.cm as cm
+        import cv2
+        orig_w, orig_h = original_pil.size
+        # Clamp overlay base to at most 1024 to prevent memory exhaustion
+        max_dim = max(orig_w, orig_h)
+        if max_dim > 1024:
+            scale = 1024.0 / max_dim
+            orig_to_blend = original_pil.resize((int(orig_w * scale), int(orig_h * scale)), Image.BILINEAR)
+        else:
+            orig_to_blend = original_pil
 
-        # Resize heatmap to match image
-        h, w = original_pil.size[1], original_pil.size[0]
-        from PIL import Image as PILImage
-        heatmap_resized = PILImage.fromarray(
-            np.uint8(heatmap_np * 255)
-        ).resize((w, h), PILImage.BILINEAR)
-        heatmap_arr = np.array(heatmap_resized) / 255.0
+        w, h = orig_to_blend.size
+        heatmap_uint8 = np.uint8(np.clip(heatmap_np * 255.0, 0, 255))
+        heatmap_resized = cv2.resize(heatmap_uint8, (w, h), interpolation=cv2.INTER_LINEAR)
+        heatmap_bgr = cv2.applyColorMap(heatmap_resized, cv2.COLORMAP_JET)
+        heatmap_rgb = cv2.cvtColor(heatmap_bgr, cv2.COLOR_BGR2RGB)
 
-        # Apply colour map
-        try:
-            import matplotlib
-            cmap = matplotlib.colormaps[colormap]
-        except (AttributeError, KeyError):
-            cmap = cm.get_cmap(colormap)
-        heatmap_rgb = cmap(heatmap_arr)[:, :, :3]   # drop alpha
-        heatmap_uint8 = np.uint8(heatmap_rgb * 255)
-
-        # Blend
-        orig_arr = np.array(original_pil.convert("RGB")).astype(float)
-        heat_arr = heatmap_uint8.astype(float)
-        blended = (1 - alpha) * orig_arr + alpha * heat_arr
-        blended = np.clip(blended, 0, 255).astype(np.uint8)
-
-        return PILImage.fromarray(blended)
+        orig_np = np.array(orig_to_blend.convert("RGB"), dtype=np.uint8)
+        blended = cv2.addWeighted(orig_np, 1.0 - alpha, heatmap_rgb, alpha, 0)
+        return Image.fromarray(blended)
 
     def remove_hooks(self):
         """Call this when done to prevent memory leaks."""
-        self._fwd_hook.remove()
-        self._bwd_hook.remove()
+        if hasattr(self, "_fwd_hook") and self._fwd_hook is not None:
+            try:
+                self._fwd_hook.remove()
+            except Exception:
+                pass
+            self._fwd_hook = None
+        if hasattr(self, "_bwd_hook") and self._bwd_hook is not None:
+            try:
+                self._bwd_hook.remove()
+            except Exception:
+                pass
+            self._bwd_hook = None
 
     # ──────────────────────────────────────────────────────────────────────────
     # Hook callbacks
