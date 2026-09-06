@@ -11,10 +11,8 @@ data/idrid/
 *.tar.gz
 *.h5
 
-# ---- Demo Sample Images (Restricted APTOS competition images) ----
-demo/sample_images/*.png
-demo/sample_images/*.jpg
-demo/sample_images/*.jpeg
+# ---- Demo Sample Images (Curated authentic reference cases for web workstation) ----
+!demo/sample_images/*.png
 !demo/sample_images/.gitkeep
 
 # ---- Redundant / Non-Deployment Checkpoints (Keep only production EXP-001) ----
