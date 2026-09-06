@@ -223,12 +223,12 @@ class ScreeningService:
         print(f"[SCREENING] Lesion Detection COMPLETE {time.time() - t_stage:.2f}s")
 
         # ---------------------------------------------------------------------
-        # STAGE 6 & 7: DEEP LEARNING DR GRADING (EXP-001) & TRUE GRAD-CAM
+        # STAGE 6: DEEP LEARNING DR GRADING (EXP-001 ONNX INFERENCE)
         # ---------------------------------------------------------------------
         grading = self.grading_service.grade(pil_img)
 
         # ---------------------------------------------------------------------
-        # STAGE 8: COMPILE CLINICAL RESULT OBJECT & RECOMMENDATIONS
+        # STAGE 7: COMPILE CLINICAL RESULT OBJECT & RECOMMENDATIONS
         # ---------------------------------------------------------------------
         print("[SCREENING] Recommendation Generation START")
         t_stage = time.time()
@@ -258,14 +258,14 @@ class ScreeningService:
                 "enhanced": enhancement["relative_url"],
                 "vessels": clean_structures["vessel_overlay_url"],
                 "lesions": lesions["overlay_url"],
-                "heatmap": grading["gradcam_url"]
+                "heatmap": None
             },
             "report": None
         }
         print(f"[SCREENING] Recommendation Generation COMPLETE {time.time() - t_stage:.2f}s")
 
         # ---------------------------------------------------------------------
-        # STAGE 9: CLINICAL REPORT GENERATION
+        # STAGE 8: CLINICAL REPORT GENERATION
         # ---------------------------------------------------------------------
         print("[SCREENING] Report Generation START")
         t_stage = time.time()
@@ -274,3 +274,26 @@ class ScreeningService:
         print(f"[SCREENING] Report Generation COMPLETE {time.time() - t_stage:.2f}s")
 
         return result
+
+    def run_gradcam(
+        self,
+        image_path: Path,
+        target_grade: int,
+        timeout_sec: float = 25.0
+    ) -> Dict[str, Any]:
+        """
+        Executes isolated real PyTorch Grad-CAM explainability analysis.
+        Does not rerun quality, structures, lesions, or report.
+        """
+        pil_img = Image.open(image_path).convert("RGB")
+        max_dim = max(pil_img.size)
+        if max_dim > 1024:
+            scale = 1024.0 / max_dim
+            new_size = (int(pil_img.size[0] * scale), int(pil_img.size[1] * scale))
+            pil_img = pil_img.resize(new_size, Image.BILINEAR)
+
+        return self.grading_service.generate_gradcam(
+            pil_image=pil_img,
+            target_grade=target_grade,
+            timeout_sec=timeout_sec
+        )

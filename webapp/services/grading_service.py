@@ -87,39 +87,6 @@ class GradingService:
         is_referable = bool(grade >= REFERRAL_THRESHOLD)
         conf_level = "High" if confidence >= 0.80 else ("Moderate" if confidence >= 0.50 else "Borderline")
 
-        # 2. True Grad-CAM generation with hook-safe execution
-        print("[SCREENING] Grad-CAM START")
-        t_gcam_0 = time.time()
-        gcam_url = None
-        gcam_available = False
-        gcam_error = None
-        gcam = None
-        try:
-            gcam = GradCAM(self.predictor.model)
-            gcam_tensor = self.predictor.preprocessor.preprocess_for_inference(pil_image)
-            heatmap, _ = gcam.generate(gcam_tensor, target_class=grade)
-            overlay = gcam.overlay_on_image(pil_image, heatmap, alpha=0.48, colormap="jet")
-
-            gcam_filename = f"{filename_prefix}_{int(np.random.randint(100000, 999999))}.png"
-            gcam_path = self.output_dir / gcam_filename
-            overlay.save(gcam_path)
-            gcam_url = f"/outputs/{gcam_filename}"
-            gcam_available = True
-        except Exception as e:
-            # Fallback if gradcam fails - never fail entire screening
-            gcam_url = None
-            gcam_available = False
-            gcam_error = str(e)
-            print(f"[SCREENING] Grad-CAM WARNING: explainability map skipped: {e}")
-        finally:
-            if gcam is not None:
-                try:
-                    gcam.remove_hooks()
-                except Exception:
-                    pass
-        t_gcam_1 = time.time()
-        print(f"[SCREENING] Grad-CAM COMPLETE {t_gcam_1 - t_gcam_0:.2f}s")
-
         # Build clean probabilities mapping
         class_probs = []
         labels = ["No DR", "Mild NPDR", "Moderate NPDR", "Severe NPDR", "Proliferative DR"]
@@ -144,8 +111,90 @@ class GradingService:
             "recommendation": REFERRAL_TEXTS[grade],
             "model_version": "EXP-001",
             "architecture": "EfficientNet-B0 (Focal Loss, Balanced Sampling)",
-            "gradcam_url": gcam_url,
-            "gradcam_available": gcam_available,
-            "gradcam_error": gcam_error,
+            "gradcam": {
+                "available": False,
+                "status": "ready_for_generation",
+                "endpoint": "/api/gradcam",
+                "url": None,
+                "error": None
+            },
+            "gradcam_url": None,
+            "gradcam_available": False,
+            "gradcam_error": None,
             "gradcam_disclaimer": "Model Attention Map: Highlights spatial regions that contributed most strongly to the neural network prediction. This is an explainability tool, not a manual lesion segmentation."
         }
+
+    def generate_gradcam(
+        self,
+        pil_image: Image.Image,
+        target_grade: int,
+        filename_prefix: str = "gradcam",
+        timeout_sec: float = 25.0
+    ) -> Dict[str, Any]:
+        """
+        Executes REAL PyTorch Grad-CAM with hard server-side execution timeout.
+        Never blocks server indefinitely; never affects core screening.
+        """
+        import time
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+
+        t_gcam_0 = time.time()
+        print(f"[SCREENING] Dedicated Grad-CAM START (Timeout budget: {timeout_sec}s)")
+
+        def _compute():
+            gcam = None
+            try:
+                for p in self.predictor.model.parameters():
+                    p.requires_grad = False
+
+                gcam = GradCAM(self.predictor.model)
+                gcam_tensor = self.predictor.preprocessor.preprocess_for_inference(pil_image)
+                heatmap, _ = gcam.generate(gcam_tensor, target_class=target_grade)
+                overlay = gcam.overlay_on_image(pil_image, heatmap, alpha=0.48, colormap="jet")
+
+                gcam_filename = f"{filename_prefix}_{int(time.time() * 1000) % 1000000}.png"
+                gcam_path = self.output_dir / gcam_filename
+                overlay.save(str(gcam_path))
+
+                return {
+                    "gradcam_available": True,
+                    "gradcam_url": f"/outputs/{gcam_filename}",
+                    "error": None,
+                    "filename": gcam_filename,
+                    "disclaimer": "Model Attention Map: Highlights spatial regions that contributed most strongly to the neural network prediction. This is an explainability tool, not a manual lesion segmentation."
+                }
+            finally:
+                if gcam is not None:
+                    try:
+                        gcam.remove_hooks()
+                    except Exception:
+                        pass
+
+        executor = ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(_compute)
+        try:
+            res = future.result(timeout=timeout_sec)
+            executor.shutdown(wait=False)
+            t_elapsed = time.time() - t_gcam_0
+            print(f"[SCREENING] Grad-CAM COMPLETE {t_elapsed:.2f}s")
+            return res
+        except (TimeoutError, FuturesTimeout):
+            executor.shutdown(wait=False)
+            t_elapsed = time.time() - t_gcam_0
+            print(f"[SCREENING] Grad-CAM TIMEOUT exceeded {timeout_sec}s CPU budget ({t_elapsed:.2f}s)")
+            return {
+                "gradcam_available": False,
+                "error": f"Grad-CAM explainability exceeded the available CPU budget ({timeout_sec}s).",
+                "gradcam_url": None,
+                "disclaimer": "Explainability map temporarily unavailable on this server."
+            }
+        except Exception as e:
+            executor.shutdown(wait=False)
+            t_elapsed = time.time() - t_gcam_0
+            print(f"[SCREENING] Grad-CAM EXCEPTION ({t_elapsed:.2f}s): {e}")
+            return {
+                "gradcam_available": False,
+                "error": f"Grad-CAM explainability unavailable: {str(e)}",
+                "gradcam_url": None,
+                "disclaimer": "Explainability map temporarily unavailable on this server."
+            }

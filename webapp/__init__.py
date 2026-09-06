@@ -16,3 +16,16 @@ def _compat_router_init(self, *args, on_startup=None, on_shutdown=None, **kwargs
 
 if "on_startup" not in _orig_router_init.__code__.co_varnames:
     starlette.routing.Router.__init__ = _compat_router_init
+
+# Configure conservative CPU thread counts to prevent CFS thread starvation on container environments
+try:
+    import torch
+    torch.set_num_threads(1)
+except Exception:
+    pass
+
+try:
+    import cv2
+    cv2.setNumThreads(1)
+except Exception:
+    pass

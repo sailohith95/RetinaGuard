@@ -167,6 +167,93 @@ def analyze_image(
         )
 
 
+@app.post("/api/gradcam")
+async def compute_gradcam(
+    request: Request,
+    image_url: Optional[str] = Form(None),
+    demo_id: Optional[str] = Form(None),
+    target_grade: Optional[int] = Form(None)
+):
+    """
+    Dedicated on-demand explainability endpoint.
+    Accepts form-data, JSON, or query parameters.
+    Executes REAL PyTorch Grad-CAM with server-side timeout guard.
+    Does not block or affect the primary screening diagnosis.
+    """
+    # Check if parameters provided in JSON body or Query
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                demo_id = demo_id or body.get("demo_id")
+                image_url = image_url or body.get("image_url")
+                if target_grade is None and "target_grade" in body:
+                    try:
+                        target_grade = int(body["target_grade"])
+                    except (ValueError, TypeError):
+                        pass
+        except Exception:
+            pass
+
+    if not demo_id and "demo_id" in request.query_params:
+        demo_id = request.query_params["demo_id"]
+    if not image_url and "image_url" in request.query_params:
+        image_url = request.query_params["image_url"]
+    if target_grade is None and "target_grade" in request.query_params:
+        try:
+            target_grade = int(request.query_params["target_grade"])
+        except (ValueError, TypeError):
+            pass
+    target_path = None
+    if demo_id:
+        cases = {c["id"]: c for c in screening_service.get_demo_cases()}
+        if demo_id not in cases:
+            raise HTTPException(status_code=400, detail=f"Unknown demo case ID: {demo_id}")
+        target_path = DEMO_DIR / cases[demo_id]["filename"]
+        if target_grade is None:
+            ref_g = cases[demo_id].get("reference_grade", 0)
+            target_grade = max(0, int(ref_g)) if ref_g is not None else 0
+    elif image_url:
+        clean_rel = image_url.lstrip("/")
+        if clean_rel.startswith("uploads/"):
+            filename = clean_rel.replace("uploads/", "", 1)
+            target_path = UPLOADS_DIR / filename
+        elif clean_rel.startswith("demo/sample_images/"):
+            filename = clean_rel.replace("demo/sample_images/", "", 1)
+            target_path = DEMO_DIR / filename
+        else:
+            p_up = UPLOADS_DIR / Path(clean_rel).name
+            p_dm = DEMO_DIR / Path(clean_rel).name
+            target_path = p_up if p_up.exists() else p_dm
+    else:
+        raise HTTPException(status_code=400, detail="Missing image_url or demo_id parameter.")
+
+    if not target_path or not target_path.exists():
+        raise HTTPException(status_code=404, detail="Referenced retinal image file not found on server.")
+
+    if target_grade is None:
+        target_grade = 0
+
+    try:
+        gradcam_result = screening_service.run_gradcam(
+            image_path=target_path,
+            target_grade=int(target_grade),
+            timeout_sec=20.0
+        )
+        return JSONResponse(content=gradcam_result)
+    except Exception as e:
+        return JSONResponse(
+            status_code=200,
+            content={
+                "gradcam_available": False,
+                "error": f"Grad-CAM explainability failed: {str(e)}",
+                "gradcam_url": None,
+                "disclaimer": "Explainability visualization temporarily unavailable on this server."
+            }
+        )
+
+
 @app.get("/api/download-report/{filename}")
 async def download_report(filename: str):
     """Direct download endpoint for generated clinical reports."""
