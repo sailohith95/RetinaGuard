@@ -1,0 +1,17 @@
+RetinaGuard — DR Classifier Evaluation
+============================================================
+Accuracy: 0.5430
+Macro F1: 0.3837
+QWK:      0.7214
+
+                  precision    recall  f1-score   support
+
+           No DR       0.92      0.81      0.86       361
+         Mild DR       0.25      0.72      0.37        74
+     Moderate DR       0.75      0.01      0.03       200
+       Severe DR       0.23      0.69      0.35        39
+Proliferative DR       0.26      0.37      0.31        59
+
+        accuracy                           0.54       733
+       macro avg       0.48      0.52      0.38       733
+    weighted avg       0.72      0.54      0.51       733

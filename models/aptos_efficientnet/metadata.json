@@ -1,0 +1,25 @@
+{
+  "model_type": "DRClassifier",
+  "architecture": "efficientnet_b0",
+  "dataset": "bumbledeep/aptos",
+  "experiment_id": "EXP-001",
+  "loss_function": "FocalLoss (gamma=2.0)",
+  "num_classes": 5,
+  "class_names": [
+    "No DR",
+    "Mild DR",
+    "Moderate DR",
+    "Severe DR",
+    "Proliferative DR"
+  ],
+  "image_size": 224,
+  "preprocessing_version": "1.0",
+  "training_date": "2026-09-05T23:11:10",
+  "best_epoch": 3,
+  "best_val_qwk": 0.7342135469959084,
+  "best_val_accuracy": 0.6984993178717599,
+  "best_val_macro_f1": 0.49808570919595263,
+  "seed": 42,
+  "device": "cpu",
+  "model_file": "models\\aptos_efficientnet\\best_model.pt"
+}

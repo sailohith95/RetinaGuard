@@ -1,0 +1,41 @@
+# RetinaGuard Python Dependencies
+# Install: pip install -r python/requirements.txt
+
+# Deep learning
+torch>=2.0.0
+torchvision>=0.15.0
+
+# HuggingFace dataset
+datasets>=2.14.0
+huggingface_hub>=0.17.0
+
+# Image processing
+Pillow>=10.0.0
+opencv-python-headless>=4.8.0
+scikit-image>=0.21.0
+
+# ML utilities
+scikit-learn>=1.3.0
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Metrics
+torchmetrics>=1.0.0
+
+# Visualization & reporting
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Logging & config
+PyYAML>=6.0
+tqdm>=4.66.0
+
+# ONNX export
+onnx>=1.14.0
+onnxruntime>=1.15.0
+
+# Grad-CAM
+grad-cam>=1.4.6
+
+# Utilities
+pandas>=2.0.0

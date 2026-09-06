@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RetinaGuard — AI-Assisted DR Screening Workstation</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="4"></circle>
+          <line x1="12" y1="2" x2="12" y2="4"></line>
+          <line x1="12" y1="20" x2="12" y2="22"></line>
+          <line x1="2" y1="12" x2="4" y2="12"></line>
+          <line x1="20" y1="12" x2="22" y2="12"></line>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-title">RetinaGuard</h1>
+        <p class="brand-subtitle">AI-Assisted Retinal Screening Workstation &bull; SIH 2026</p>
+      </div>
+    </div>
+    
+    <div class="header-meta">
+      <div class="meta-tag model-badge"><span class="pulse-dot"></span> Model: <strong>EXP-001 (EfficientNet-B0)</strong></div>
+      <div class="meta-tag mode-badge">Mode: <strong>OFFLINE</strong></div>
+      <button class="btn btn-outline" id="btn-about" title="About System">About</button>
+    </div>
+  </header>
+
+  <!-- Sub-Header Clinical Control Bar -->
+  <section class="control-bar">
+    <div class="patient-fields">
+      <div class="field-group">
+        <label>Patient ID</label>
+        <input type="text" id="input-patient-id" value="PT-82910">
+      </div>
+      <div class="field-group">
+        <label>Exam ID</label>
+        <input type="text" id="input-exam-id" value="EX-00412">
+      </div>
+      <div class="field-group">
+        <label>Eye</label>
+        <select id="select-eye">
+          <option value="Right (OD)">Right (OD)</option>
+          <option value="Left (OS)">Left (OS)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="action-fields">
+      <div class="demo-selector-group">
+        <label>Curated Demo Scenarios</label>
+        <div class="input-with-button">
+          <select id="select-demo-case">
+            <option value="">-- Choose authentic demo case --</option>
+          </select>
+          <button class="btn btn-secondary" id="btn-load-demo">Load Demo</button>
+        </div>
+      </div>
+
+      <div class="upload-group">
+        <label>Or Upload Clinical Scan</label>
+        <input type="file" id="file-upload" accept=".jpg,.jpeg,.png,.tif,.tiff" style="display: none;">
+        <button class="btn btn-secondary" id="btn-trigger-upload">Upload File</button>
+      </div>
+
+      <div class="analyze-group">
+        <label>&nbsp;</label>
+        <button class="btn btn-primary btn-analyze" id="btn-analyze" disabled>
+          <span id="analyze-spinner" class="spinner" style="display: none;"></span>
+          <span id="analyze-text">Analyze Image ▶</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Workstation Canvas -->
+  <main class="workstation-container">
+    
+    <!-- LEFT: Image Viewport & Layer Controls -->
+    <section class="viewport-column">
+      <div class="card viewport-card">
+        <div class="card-header viewport-header">
+          <div class="viewport-title-group">
+            <span class="card-title">Retinal Image Workspace</span>
+            <span id="image-meta-tag" class="badge badge-neutral">No Image Loaded</span>
+          </div>
+
+          <!-- Layer Toggles -->
+          <div class="layer-toggle-group" id="layer-toggles" style="display: none;">
+            <button class="toggle-btn active" data-layer="original">Original</button>
+            <button class="toggle-btn" data-layer="enhanced">Enhanced</button>
+            <button class="toggle-btn" data-layer="vessels">Vessels</button>
+            <button class="toggle-btn" data-layer="lesions">Lesions</button>
+            <button class="toggle-btn" data-layer="heatmap">Heatmap (Grad-CAM)</button>
+          </div>
+        </div>
+
+        <!-- Central Image Viewport -->
+        <div class="viewport-stage" id="viewport-stage">
+          <div class="empty-placeholder" id="empty-placeholder">
+            <div class="placeholder-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#656d76" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </div>
+            <h3>No Fundus Image Selected</h3>
+            <p>Select a scenario from the Demo dropdown or upload a raw fundus camera photograph to begin.</p>
+          </div>
+
+          <img id="main-image-view" class="main-retina-image" src="" alt="Retinal Fundus View" style="display: none;">
+          
+          <!-- Processing Overlay -->
+          <div class="processing-overlay" id="processing-overlay" style="display: none;">
+            <div class="pulse-loader"></div>
+            <p id="processing-status-text">Executing Multi-Stage Screening Pipeline...</p>
+            <small>Quality Gate &bull; CLAHE &bull; Landmarks &bull; Lesions &bull; EXP-001 &bull; Grad-CAM</small>
+          </div>
+        </div>
+
+        <!-- Viewport Footer / Dynamic Legends -->
+        <div class="viewport-footer">
+          <div id="layer-legend" class="legend-box" style="display: none;">
+            <!-- Injected dynamically via JS -->
+          </div>
+
+          <div id="safety-alert-box" class="alert-box alert-danger" style="display: none;">
+            <!-- Injected if Ungradable -->
+          </div>
+
+          <div id="borderline-alert-box" class="alert-box alert-warning" style="display: none;">
+            <!-- Injected if Borderline -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Multi-Panel Clinical Findings -->
+    <aside class="findings-column">
+      
+      <!-- Panel 1: Image Quality Assessment -->
+      <div class="card findings-card">
+        <div class="card-header">
+          <span class="card-title">1. Image Quality Assessment</span>
+          <span id="badge-quality-status" class="badge badge-neutral">PENDING</span>
+        </div>
+        <div class="card-body">
+          <div class="score-row">
+            <div>
+              <div class="sub-label">Overall Quality Score</div>
+              <div class="big-score"><span id="val-quality-score">--</span> <small>/ 100</small></div>
+            </div>
+            <div class="quality-meter-wrap">
+              <div class="quality-meter-bar">
+                <div id="quality-meter-fill" class="quality-meter-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="metrics-grid">
+            <div class="metric-item">
+              <span class="metric-name">Focus / Sharpness</span>
+              <span class="metric-val" id="val-q-focus">--</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-name">Illumination</span>
+              <span class="metric-val" id="val-q-illum">--</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-name">Contrast</span>
+              <span class="metric-val" id="val-q-contrast">--</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-name">Field of View (FOV)</span>
+              <span class="metric-val" id="val-q-fov">--</span>
+            </div>
+          </div>
+
+          <div class="quality-note" id="box-quality-reason" style="display: none;">
+            <strong>Quality Finding:</strong> <span id="text-quality-reason">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: DR Severity & Screening Result -->
+      <div class="card findings-card severity-card">
+        <div class="card-header">
+          <span class="card-title">2. DR Severity Classification</span>
+          <span id="badge-referral-status" class="badge badge-neutral">PENDING</span>
+        </div>
+        <div class="card-body severity-card-body">
+          <div class="severity-scroll-container">
+            <div class="grade-banner" id="grade-banner">
+              <div class="grade-prefix">ICDR DR Screening Severity</div>
+              <div class="grade-headline" id="text-grade-headline">Awaiting Analysis</div>
+              <div class="grade-subtext" id="text-grade-confidence">Run screening to evaluate fundus image</div>
+            </div>
+
+            <!-- Class Probabilities Distribution -->
+            <div class="probabilities-section" id="probabilities-section" style="display: none;">
+              <div class="sub-label" style="margin-bottom: 6px;">EXP-001 Softmax Probabilities</div>
+              <div id="prob-bars-container" class="prob-bars-container">
+                <!-- Injected dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 3: Retinal Landmarks & Lesion Candidates -->
+      <div class="card findings-card landmarks-card">
+        <div class="card-header">
+          <span class="card-title">3. Landmarks & Lesion Candidates</span>
+        </div>
+        <div class="card-body landmarks-card-body">
+          <div class="landmarks-scroll-container">
+            <table class="clinical-table">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Status / Count</th>
+                  <th>Analysis Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Optic Disc</td>
+                  <td id="val-od-status">--</td>
+                  <td id="val-od-details">Morphological Peak Luminance</td>
+                </tr>
+                <tr>
+                  <td>Fovea Centralis</td>
+                  <td id="val-fovea-status">--</td>
+                  <td id="val-fovea-details">Temporal Geometric Projection</td>
+                </tr>
+                <tr>
+                  <td>Retinal Vessels</td>
+                  <td id="val-vessel-density">--</td>
+                  <td>Vascular Density (% surface)</td>
+                </tr>
+                <tr>
+                  <td>Microaneurysms</td>
+                  <td id="val-ma-count">--</td>
+                  <td>Candidate Detection (Top-hat)</td>
+                </tr>
+                <tr>
+                  <td>Hard Exudates</td>
+                  <td id="val-ex-count">--</td>
+                  <td>Candidate Detection (Disc-masked)</td>
+                </tr>
+                <tr>
+                  <td>Hemorrhages</td>
+                  <td id="val-he-count">--</td>
+                  <td>Candidate Detection (Dark lesions)</td>
+                </tr>
+                <tr>
+                  <td>NV Risk Indicator</td>
+                  <td id="val-nv-risk">--</td>
+                  <td>Vessel Density Stratification</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 4: Clinical Recommendation & Report Export -->
+      <div class="card findings-card">
+        <div class="card-header">
+          <span class="card-title">4. Screening Recommendation</span>
+        </div>
+        <div class="card-body">
+          <div class="recommendation-box" id="recommendation-box">
+            <div class="rec-title" id="rec-title">Standard Triage Recommendation</div>
+            <div class="rec-body" id="rec-body">Upload or load an image to receive clinical triage guidance.</div>
+          </div>
+
+          <div class="report-action-bar" id="report-action-bar" style="display: none;">
+            <a id="btn-view-report" class="btn btn-secondary" target="_blank" href="#">View Full Report ↗</a>
+            <a id="btn-download-report" class="btn btn-primary" href="#" download>Download HTML Report</a>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Bottom Medical Disclaimer Bar -->
+  <footer class="app-footer">
+    <div class="disclaimer-text">
+      <strong>IMPORTANT CLINICAL DISCLAIMER:</strong> RetinaGuard is an AI-assisted diabetic retinopathy screening decision-support prototype (Version 1.0.0). It does NOT provide an autonomous medical diagnosis. All findings, candidate lesion counts, and recommendations must be confirmed by a licensed ophthalmologist before clinical management decisions are undertaken.
+    </div>
+  </footer>
+
+  <!-- About Modal -->
+  <div class="modal-overlay" id="about-modal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>About RetinaGuard</h3>
+        <button class="modal-close" id="btn-close-about">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p><strong>RetinaGuard</strong> is an edge-deployable, offline-first screening workstation developed for the Smart India Hackathon (SIH 2026).</p>
+        <p><strong>Production Model:</strong> EXP-001 (EfficientNet-B0 with Focal Loss, balanced sampling). Validated on 733 held-out test scans: QWK = 0.7342, Accuracy = 69.85%, Referable Sensitivity = 78.86%, Specificity = 92.64%.</p>
+        <p><strong>Core Capabilities:</strong></p>
+        <ul>
+          <li>Image Quality Assessment & Early Rejection on Ungradable Images</li>
+          <li>Contrast-Limited Adaptive Histogram Equalization (CLAHE)</li>
+          <li>Optic Disc, Fovea, & Retinal Vessel Segmentation</li>
+          <li>Microaneurysm, Disc-Excluded Hard Exudate, & Hemorrhage Candidate Detection</li>
+          <li>True Grad-CAM Gradient Activation Saliency Maps</li>
+          <li>Automated Clinical Screening Reports & Referable DR Triage</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

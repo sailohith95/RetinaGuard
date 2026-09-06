@@ -1,0 +1,43 @@
+{
+  "splits": [
+    "train"
+  ],
+  "image_col": "image",
+  "label_col": "label_code",
+  "columns": [
+    "image",
+    "label_code",
+    "label"
+  ],
+  "sizes": {
+    "train": 3662
+  },
+  "total": 3662,
+  "class_distribution": {
+    "train": {
+      "0": {
+        "count": 1805,
+        "pct": 49.3
+      },
+      "1": {
+        "count": 370,
+        "pct": 10.1
+      },
+      "2": {
+        "count": 999,
+        "pct": 27.3
+      },
+      "3": {
+        "count": 193,
+        "pct": 5.3
+      },
+      "4": {
+        "count": 295,
+        "pct": 8.1
+      }
+    }
+  },
+  "labels_valid": true,
+  "sample_ok": true,
+  "corruption_in_first_20": 0
+}

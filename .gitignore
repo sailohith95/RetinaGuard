@@ -1,0 +1,77 @@
+# ==============================================================================
+# RetinaGuard — Git Ignore Configuration
+# ==============================================================================
+
+# ---- Datasets & Caches (NEVER commit competition/private data) ----
+data/
+data/aptos_cache/
+data/aptos/
+data/idrid/
+*.zip
+*.tar.gz
+*.h5
+
+# ---- Demo Sample Images (Restricted APTOS competition images) ----
+demo/sample_images/*.png
+demo/sample_images/*.jpg
+demo/sample_images/*.jpeg
+!demo/sample_images/.gitkeep
+
+# ---- Redundant / Non-Deployment Checkpoints (Keep only production EXP-001) ----
+models/experiments/**/*.pt
+models/baseline_model/*.pt
+models/baseline_model/*.onnx*
+models/aptos_efficientnet/checkpoints/
+
+# ---- MATLAB Temporary / Cache Files ----
+*.asv
+*.mex*
+*.p
+*.mlx.bak
+slprj/
+*.slxc
+
+# ---- Python Virtual Environments & Caches ----
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ---- Web Runtime Dynamic Uploads & Generated Outputs ----
+webapp/uploads/*
+!webapp/uploads/.gitkeep
+webapp/outputs/*
+!webapp/outputs/.gitkeep
+
+# ---- Reports & Temporary Output Files ----
+reports/*.html
+reports/*.pdf
+*.tmp
+*.log
+results/*.log
+
+# ---- Secrets, Credentials & Environment Variables ----
+.env
+.env.*
+*.key
+*.pem
+kaggle.json
+*.credentials
+
+# ---- Operating System & Local IDE Files ----
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace

@@ -1,0 +1,17 @@
+# RetinaGuard Production Web Application Requirements
+# Compatible with Linux (Render), macOS, and Windows
+
+fastapi>=0.111.0
+uvicorn[standard]>=0.22.0
+jinja2>=3.1.0
+python-multipart>=0.0.6
+torch>=2.0.0
+torchvision>=0.15.0
+onnxruntime>=1.15.0
+opencv-python-headless>=4.8.0
+pillow>=9.5.0
+numpy>=1.23.0
+scipy>=1.10.0
+pyyaml>=6.0
+matplotlib>=3.7.0
+httpx>=0.24.0

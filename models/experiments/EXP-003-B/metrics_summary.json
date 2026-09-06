@@ -1,0 +1,73 @@
+{
+  "accuracy": 0.6985,
+  "macro_f1": 0.4981,
+  "qwk": 0.7342,
+  "per_class": {
+    "No DR": {
+      "precision": 0.8632,
+      "recall": 0.9612,
+      "f1": 0.9096
+    },
+    "Mild DR": {
+      "precision": 0.4531,
+      "recall": 0.3919,
+      "f1": 0.4203
+    },
+    "Moderate DR": {
+      "precision": 0.6731,
+      "recall": 0.525,
+      "f1": 0.5899
+    },
+    "Severe DR": {
+      "precision": 0.2785,
+      "recall": 0.5641,
+      "f1": 0.3729
+    },
+    "Proliferative DR": {
+      "precision": 0.2812,
+      "recall": 0.1525,
+      "f1": 0.1978
+    }
+  },
+  "referable_dr_threshold": 2,
+  "referable_sensitivity": 0.7886,
+  "referable_specificity": 0.9264,
+  "n_val_samples": 733,
+  "confusion_matrix": [
+    [
+      347,
+      7,
+      2,
+      4,
+      1
+    ],
+    [
+      20,
+      29,
+      21,
+      3,
+      1
+    ],
+    [
+      29,
+      17,
+      105,
+      32,
+      17
+    ],
+    [
+      2,
+      2,
+      9,
+      22,
+      4
+    ],
+    [
+      4,
+      9,
+      19,
+      18,
+      9
+    ]
+  ]
+}

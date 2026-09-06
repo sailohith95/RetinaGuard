@@ -1,0 +1,675 @@
+[
+  {
+    "exp_id": "EXP-000 (Baseline)",
+    "model": "EfficientNet-B0",
+    "loss": "Weighted CrossEntropy",
+    "sampler": "Standard",
+    "stage1_epochs": 1,
+    "stage2_epochs": 0,
+    "lr_stage1": 0.001,
+    "lr_stage2": 0,
+    "batch_size": 32,
+    "best_epoch": 1,
+    "checkpoint_path": "models/baseline_model/best_model.pt",
+    "metrics": {
+      "accuracy": 0.6453,
+      "macro_f1": 0.4144,
+      "qwk": 0.6752,
+      "per_class": {
+        "No DR": {
+          "precision": 0.7946,
+          "recall": 0.9751,
+          "f1": 0.8756
+        },
+        "Mild DR": {
+          "precision": 0.4179,
+          "recall": 0.3784,
+          "f1": 0.3972
+        },
+        "Moderate DR": {
+          "precision": 0.6569,
+          "recall": 0.335,
+          "f1": 0.4437
+        },
+        "Severe DR": {
+          "precision": 0.2174,
+          "recall": 0.641,
+          "f1": 0.3247
+        },
+        "Proliferative DR": {
+          "precision": 0.1667,
+          "recall": 0.0169,
+          "f1": 0.0308
+        }
+      },
+      "referable_dr_threshold": 2,
+      "referable_sensitivity": 0.6711,
+      "referable_specificity": 0.9471,
+      "n_val_samples": 733,
+      "confusion_matrix": [
+        [
+          352,
+          2,
+          1,
+          5,
+          1
+        ],
+        [
+          30,
+          28,
+          11,
+          4,
+          1
+        ],
+        [
+          49,
+          28,
+          67,
+          53,
+          3
+        ],
+        [
+          3,
+          2,
+          9,
+          25,
+          0
+        ],
+        [
+          9,
+          7,
+          14,
+          28,
+          1
+        ]
+      ]
+    },
+    "timestamp": "2026-09-05T22:50:00"
+  },
+  {
+    "exp_id": "EXP-001",
+    "model": "EfficientNet-B0",
+    "loss": "focal",
+    "sampler": "Standard",
+    "stage1_epochs": 3,
+    "stage2_epochs": 0,
+    "lr_stage1": 0.001,
+    "lr_stage2": 0.0001,
+    "batch_size": 32,
+    "best_epoch": 3,
+    "checkpoint_path": "C:\\Users\\T SAILOHITH\\Desktop\\SIH\\RetinaGuard\\models\\experiments\\EXP-001\\best_model.pt",
+    "metrics": {
+      "accuracy": 0.6985,
+      "macro_f1": 0.4981,
+      "qwk": 0.7342,
+      "per_class": {
+        "No DR": {
+          "precision": 0.8632,
+          "recall": 0.9612,
+          "f1": 0.9096
+        },
+        "Mild DR": {
+          "precision": 0.4531,
+          "recall": 0.3919,
+          "f1": 0.4203
+        },
+        "Moderate DR": {
+          "precision": 0.6731,
+          "recall": 0.525,
+          "f1": 0.5899
+        },
+        "Severe DR": {
+          "precision": 0.2785,
+          "recall": 0.5641,
+          "f1": 0.3729
+        },
+        "Proliferative DR": {
+          "precision": 0.2812,
+          "recall": 0.1525,
+          "f1": 0.1978
+        }
+      },
+      "referable_dr_threshold": 2,
+      "referable_sensitivity": 0.7886,
+      "referable_specificity": 0.9264,
+      "n_val_samples": 733,
+      "confusion_matrix": [
+        [
+          347,
+          7,
+          2,
+          4,
+          1
+        ],
+        [
+          20,
+          29,
+          21,
+          3,
+          1
+        ],
+        [
+          29,
+          17,
+          105,
+          32,
+          17
+        ],
+        [
+          2,
+          2,
+          9,
+          22,
+          4
+        ],
+        [
+          4,
+          9,
+          19,
+          18,
+          9
+        ]
+      ]
+    },
+    "timestamp": "2026-09-05T23:11:10.501831"
+  },
+  {
+    "exp_id": "EXP-002-A",
+    "model": "EfficientNet-B0",
+    "loss": "ordinal_focal",
+    "sampler": "Standard",
+    "stage1_epochs": 3,
+    "stage2_epochs": 0,
+    "lr_stage1": 0.001,
+    "lr_stage2": 0.0001,
+    "batch_size": 32,
+    "best_epoch": 3,
+    "checkpoint_path": "C:\\Users\\T SAILOHITH\\Desktop\\SIH\\RetinaGuard\\models\\experiments\\EXP-002-A\\best_model.pt",
+    "metrics": {
+      "accuracy": 0.6876,
+      "macro_f1": 0.4768,
+      "qwk": 0.6879,
+      "per_class": {
+        "No DR": {
+          "precision": 0.7946,
+          "recall": 0.9861,
+          "f1": 0.8801
+        },
+        "Mild DR": {
+          "precision": 0.459,
+          "recall": 0.3784,
+          "f1": 0.4148
+        },
+        "Moderate DR": {
+          "precision": 0.6889,
+          "recall": 0.465,
+          "f1": 0.5552
+        },
+        "Severe DR": {
+          "precision": 0.3188,
+          "recall": 0.5641,
+          "f1": 0.4074
+        },
+        "Proliferative DR": {
+          "precision": 0.25,
+          "recall": 0.0847,
+          "f1": 0.1266
+        }
+      },
+      "referable_dr_threshold": 2,
+      "referable_sensitivity": 0.6946,
+      "referable_specificity": 0.9609,
+      "n_val_samples": 733,
+      "confusion_matrix": [
+        [
+          356,
+          4,
+          0,
+          1,
+          0
+        ],
+        [
+          30,
+          28,
+          13,
+          2,
+          1
+        ],
+        [
+          50,
+          19,
+          93,
+          27,
+          11
+        ],
+        [
+          3,
+          2,
+          9,
+          22,
+          3
+        ],
+        [
+          9,
+          8,
+          20,
+          17,
+          5
+        ]
+      ]
+    },
+    "timestamp": "2026-09-05T23:25:32.230118"
+  },
+  {
+    "exp_id": "EXP-002-B",
+    "model": "EfficientNet-B0",
+    "loss": "ordinal_focal",
+    "sampler": "WeightedRandomSampler",
+    "stage1_epochs": 3,
+    "stage2_epochs": 0,
+    "lr_stage1": 0.001,
+    "lr_stage2": 0.0001,
+    "batch_size": 32,
+    "best_epoch": 3,
+    "checkpoint_path": "C:\\Users\\T SAILOHITH\\Desktop\\SIH\\RetinaGuard\\models\\experiments\\EXP-002-B\\best_model.pt",
+    "metrics": {
+      "accuracy": 0.6248,
+      "macro_f1": 0.409,
+      "qwk": 0.7262,
+      "per_class": {
+        "No DR": {
+          "precision": 0.8696,
+          "recall": 0.9418,
+          "f1": 0.9043
+        },
+        "Mild DR": {
+          "precision": 0.3063,
+          "recall": 0.6622,
+          "f1": 0.4188
+        },
+        "Moderate DR": {
+          "precision": 0.8684,
+          "recall": 0.165,
+          "f1": 0.2773
+        },
+        "Severe DR": {
+          "precision": 0.2446,
+          "recall": 0.8718,
+          "f1": 0.382
+        },
+        "Proliferative DR": {
+          "precision": 0.4,
+          "recall": 0.0339,
+          "f1": 0.0625
+        }
+      },
+      "referable_dr_threshold": 2,
+      "referable_sensitivity": 0.5772,
+      "referable_specificity": 0.977,
+      "n_val_samples": 733,
+      "confusion_matrix": [
+        [
+          340,
+          19,
+          0,
+          2,
+          0
+        ],
+        [
+          17,
+          49,
+          1,
+          7,
+          0
+        ],
+        [
+          28,
+          74,
+          33,
+          62,
+          3
+        ],
+        [
+          1,
+          2,
+          2,
+          34,
+          0
+        ],
+        [
+          5,
+          16,
+          2,
+          34,
+          2
+        ]
+      ]
+    },
+    "timestamp": "2026-09-06T12:05:18.595838"
+  },
+  {
+    "exp_id": "EXP-002-C",
+    "model": "EfficientNet-B0",
+    "loss": "ordinal_focal",
+    "sampler": "WeightedRandomSampler",
+    "stage1_epochs": 3,
+    "stage2_epochs": 0,
+    "lr_stage1": 0.001,
+    "lr_stage2": 0.0001,
+    "batch_size": 32,
+    "best_epoch": 2,
+    "checkpoint_path": "C:\\Users\\T SAILOHITH\\Desktop\\SIH\\RetinaGuard\\models\\experiments\\EXP-002-C\\best_model.pt",
+    "metrics": {
+      "accuracy": 0.543,
+      "macro_f1": 0.3837,
+      "qwk": 0.7214,
+      "per_class": {
+        "No DR": {
+          "precision": 0.9243,
+          "recall": 0.8116,
+          "f1": 0.8643
+        },
+        "Mild DR": {
+          "precision": 0.2524,
+          "recall": 0.7162,
+          "f1": 0.3732
+        },
+        "Moderate DR": {
+          "precision": 0.75,
+          "recall": 0.015,
+          "f1": 0.0294
+        },
+        "Severe DR": {
+          "precision": 0.2308,
+          "recall": 0.6923,
+          "f1": 0.3462
+        },
+        "Proliferative DR": {
+          "precision": 0.2588,
+          "recall": 0.3729,
+          "f1": 0.3056
+        }
+      },
+      "referable_dr_threshold": 2,
+      "referable_sensitivity": 0.6342,
+      "referable_specificity": 0.9609,
+      "n_val_samples": 733,
+      "confusion_matrix": [
+        [
+          293,
+          63,
+          0,
+          4,
+          1
+        ],
+        [
+          9,
+          53,
+          1,
+          4,
+          7
+        ],
+        [
+          13,
+          78,
+          3,
+          59,
+          47
+        ],
+        [
+          0,
+          4,
+          0,
+          27,
+          8
+        ],
+        [
+          2,
+          12,
+          0,
+          23,
+          22
+        ]
+      ]
+    },
+    "timestamp": "2026-09-06T12:11:39.287952"
+  },
+  {
+    "exp_id": "EXP-003-A",
+    "model": "EfficientNet-B0",
+    "loss": "focal",
+    "sampler": "Standard",
+    "stage1_epochs": 3,
+    "stage2_epochs": 3,
+    "unfreeze_depth": "Top 2 blocks",
+    "lr_stage1": 0.001,
+    "lr_stage2": 2e-05,
+    "lr_head": 0.0001,
+    "batch_size": 32,
+    "best_epoch": 0,
+    "checkpoint_path": "C:\\Users\\T SAILOHITH\\Desktop\\SIH\\RetinaGuard\\models\\experiments\\EXP-003-A\\best_model.pt",
+    "history": {
+      "train_loss": [
+        0.5780093811831404,
+        0.5426126927412097
+      ],
+      "train_acc": [
+        0.6705360191191533,
+        0.6705360191191533
+      ],
+      "val_loss": [
+        0.6577017229218112,
+        0.657050542015008,
+        0.6578568527513117
+      ],
+      "val_acc": [
+        0.6984993178717599,
+        0.694406548431105,
+        0.7053206002728513
+      ],
+      "val_qwk": [
+        0.7342135469959084,
+        0.7297063533232594,
+        0.7281257958671596
+      ],
+      "val_f1": [
+        0.49808570919595263,
+        0.4994599725172142,
+        0.516787532068431
+      ]
+    },
+    "metrics": {
+      "accuracy": 0.6985,
+      "macro_f1": 0.4981,
+      "qwk": 0.7342,
+      "per_class": {
+        "No DR": {
+          "precision": 0.8632,
+          "recall": 0.9612,
+          "f1": 0.9096
+        },
+        "Mild DR": {
+          "precision": 0.4531,
+          "recall": 0.3919,
+          "f1": 0.4203
+        },
+        "Moderate DR": {
+          "precision": 0.6731,
+          "recall": 0.525,
+          "f1": 0.5899
+        },
+        "Severe DR": {
+          "precision": 0.2785,
+          "recall": 0.5641,
+          "f1": 0.3729
+        },
+        "Proliferative DR": {
+          "precision": 0.2812,
+          "recall": 0.1525,
+          "f1": 0.1978
+        }
+      },
+      "referable_dr_threshold": 2,
+      "referable_sensitivity": 0.7886,
+      "referable_specificity": 0.9264,
+      "n_val_samples": 733,
+      "confusion_matrix": [
+        [
+          347,
+          7,
+          2,
+          4,
+          1
+        ],
+        [
+          20,
+          29,
+          21,
+          3,
+          1
+        ],
+        [
+          29,
+          17,
+          105,
+          32,
+          17
+        ],
+        [
+          2,
+          2,
+          9,
+          22,
+          4
+        ],
+        [
+          4,
+          9,
+          19,
+          18,
+          9
+        ]
+      ]
+    },
+    "timestamp": "2026-09-06T16:10:02.230661"
+  },
+  {
+    "exp_id": "EXP-003-B",
+    "model": "EfficientNet-B0",
+    "loss": "focal",
+    "sampler": "Standard",
+    "stage1_epochs": 3,
+    "stage2_epochs": 3,
+    "unfreeze_depth": "Top 3 blocks",
+    "lr_stage1": 0.001,
+    "lr_stage2": 2e-05,
+    "lr_head": 0.0001,
+    "batch_size": 32,
+    "best_epoch": 0,
+    "checkpoint_path": "C:\\Users\\T SAILOHITH\\Desktop\\SIH\\RetinaGuard\\models\\experiments\\EXP-003-B\\best_model.pt",
+    "history": {
+      "train_loss": [
+        0.569284927167352,
+        0.5166263841410552
+      ],
+      "train_acc": [
+        0.6725844998292932,
+        0.6807784226698532
+      ],
+      "val_loss": [
+        0.6577017229218112,
+        0.647013805003641,
+        0.6459277272224426
+      ],
+      "val_acc": [
+        0.6984993178717599,
+        0.7012278308321964,
+        0.7066848567530696
+      ],
+      "val_qwk": [
+        0.7342135469959084,
+        0.724259125535516,
+        0.7316845350864007
+      ],
+      "val_f1": [
+        0.49808570919595263,
+        0.50243783878684,
+        0.5081017861659
+      ]
+    },
+    "metrics": {
+      "accuracy": 0.6985,
+      "macro_f1": 0.4981,
+      "qwk": 0.7342,
+      "per_class": {
+        "No DR": {
+          "precision": 0.8632,
+          "recall": 0.9612,
+          "f1": 0.9096
+        },
+        "Mild DR": {
+          "precision": 0.4531,
+          "recall": 0.3919,
+          "f1": 0.4203
+        },
+        "Moderate DR": {
+          "precision": 0.6731,
+          "recall": 0.525,
+          "f1": 0.5899
+        },
+        "Severe DR": {
+          "precision": 0.2785,
+          "recall": 0.5641,
+          "f1": 0.3729
+        },
+        "Proliferative DR": {
+          "precision": 0.2812,
+          "recall": 0.1525,
+          "f1": 0.1978
+        }
+      },
+      "referable_dr_threshold": 2,
+      "referable_sensitivity": 0.7886,
+      "referable_specificity": 0.9264,
+      "n_val_samples": 733,
+      "confusion_matrix": [
+        [
+          347,
+          7,
+          2,
+          4,
+          1
+        ],
+        [
+          20,
+          29,
+          21,
+          3,
+          1
+        ],
+        [
+          29,
+          17,
+          105,
+          32,
+          17
+        ],
+        [
+          2,
+          2,
+          9,
+          22,
+          4
+        ],
+        [
+          4,
+          9,
+          19,
+          18,
+          9
+        ]
+      ]
+    },
+    "timestamp": "2026-09-06T16:22:23.667032"
+  }
+]
