@@ -8,7 +8,6 @@ True Grad-CAM, and Clinical Reporting.
 
 from pathlib import Path
 from typing import Dict, Any, Optional
-import time
 import numpy as np
 import cv2
 from PIL import Image
@@ -121,23 +120,10 @@ class ScreeningService:
         pil_img = Image.open(image_path).convert("RGB")
         h, w = img_bgr.shape[:2]
 
-        # Memory safeguard for production cloud deployment (Render 512MB RAM):
-        # Clamping working resolution to max 1024px preserves full diagnostic fidelity while keeping RAM < 350 MB.
-        MAX_DIM = 1024
-        if max(h, w) > MAX_DIM:
-            scale = MAX_DIM / float(max(h, w))
-            new_w = int(w * scale)
-            new_h = int(h * scale)
-            img_bgr = cv2.resize(img_bgr, (new_w, new_h), interpolation=cv2.INTER_AREA)
-            pil_img = pil_img.resize((new_w, new_h), Image.BILINEAR)
-
         # ---------------------------------------------------------------------
-        # STAGE 2: IMAGE QUALITY ASSESSMENT
+        # STAGE 1: IMAGE QUALITY ASSESSMENT
         # ---------------------------------------------------------------------
-        print("[SCREENING] Quality Assessment START")
-        t_stage = time.time()
         quality = self.quality_service.assess(img_bgr)
-        print(f"[SCREENING] Quality Assessment COMPLETE {time.time() - t_stage:.2f}s")
 
         # ---------------------------------------------------------------------
         # CRITICAL SAFETY GATE: UNGRADABLE IMAGE REJECTION
@@ -166,31 +152,22 @@ class ScreeningService:
                 "report": None
             }
             # Generate ungradable report
-            print("[SCREENING] Report Generation START")
-            t_stage = time.time()
             report_res = self.report_service.generate(result, patient_id, exam_id, eye)
             result["report"] = report_res
-            print(f"[SCREENING] Report Generation COMPLETE {time.time() - t_stage:.2f}s")
             return result
 
         # ---------------------------------------------------------------------
-        # STAGE 3: CLINICAL IMAGE ENHANCEMENT
+        # STAGE 2: CLINICAL IMAGE ENHANCEMENT
         # ---------------------------------------------------------------------
-        print("[SCREENING] Enhancement START")
-        t_stage = time.time()
         enhancement = self.enhancement_service.enhance(img_bgr)
         enhanced_bgr = enhancement["enhanced_bgr"]
-        print(f"[SCREENING] Enhancement COMPLETE {time.time() - t_stage:.2f}s")
 
         # ---------------------------------------------------------------------
-        # STAGE 4: RETINAL ANATOMICAL LANDMARKS
+        # STAGE 3: RETINAL ANATOMICAL LANDMARKS
         # ---------------------------------------------------------------------
-        print("[SCREENING] Structure Detection START")
-        t_stage = time.time()
         structures = self.structure_service.detect(enhanced_bgr)
         od_mask = structures["optic_disc"]["mask_np"]
         vessel_density = structures["vessels"]["density_percent"]
-        print(f"[SCREENING] Structure Detection COMPLETE {time.time() - t_stage:.2f}s")
 
         # Remove numpy arrays from JSON output
         clean_structures = {
@@ -211,27 +188,22 @@ class ScreeningService:
         }
 
         # ---------------------------------------------------------------------
-        # STAGE 5: COMPUTER VISION LESION CANDIDATE ANALYSIS
+        # STAGE 4: COMPUTER VISION LESION CANDIDATE ANALYSIS
         # ---------------------------------------------------------------------
-        print("[SCREENING] Lesion Detection START")
-        t_stage = time.time()
         lesions = self.lesion_service.analyze(
             enhanced_bgr,
             od_mask=od_mask,
             vessel_density=vessel_density
         )
-        print(f"[SCREENING] Lesion Detection COMPLETE {time.time() - t_stage:.2f}s")
 
         # ---------------------------------------------------------------------
-        # STAGE 6: DEEP LEARNING DR GRADING (EXP-001 ONNX INFERENCE)
+        # STAGE 5: DEEP LEARNING DR GRADING (EXP-001) & TRUE GRAD-CAM
         # ---------------------------------------------------------------------
         grading = self.grading_service.grade(pil_img)
 
         # ---------------------------------------------------------------------
-        # STAGE 7: COMPILE CLINICAL RESULT OBJECT & RECOMMENDATIONS
+        # STAGE 6: COMPILE CLINICAL RESULT OBJECT
         # ---------------------------------------------------------------------
-        print("[SCREENING] Recommendation Generation START")
-        t_stage = time.time()
         result = {
             "patient_id": patient_id,
             "exam_id": exam_id,
@@ -258,42 +230,15 @@ class ScreeningService:
                 "enhanced": enhancement["relative_url"],
                 "vessels": clean_structures["vessel_overlay_url"],
                 "lesions": lesions["overlay_url"],
-                "heatmap": None
+                "heatmap": grading["gradcam_url"]
             },
             "report": None
         }
-        print(f"[SCREENING] Recommendation Generation COMPLETE {time.time() - t_stage:.2f}s")
 
         # ---------------------------------------------------------------------
-        # STAGE 8: CLINICAL REPORT GENERATION
+        # STAGE 7: CLINICAL REPORT GENERATION
         # ---------------------------------------------------------------------
-        print("[SCREENING] Report Generation START")
-        t_stage = time.time()
         report_res = self.report_service.generate(result, patient_id, exam_id, eye)
         result["report"] = report_res
-        print(f"[SCREENING] Report Generation COMPLETE {time.time() - t_stage:.2f}s")
 
         return result
-
-    def run_gradcam(
-        self,
-        image_path: Path,
-        target_grade: int,
-        timeout_sec: float = 25.0
-    ) -> Dict[str, Any]:
-        """
-        Executes isolated real PyTorch Grad-CAM explainability analysis.
-        Does not rerun quality, structures, lesions, or report.
-        """
-        pil_img = Image.open(image_path).convert("RGB")
-        max_dim = max(pil_img.size)
-        if max_dim > 1024:
-            scale = 1024.0 / max_dim
-            new_size = (int(pil_img.size[0] * scale), int(pil_img.size[1] * scale))
-            pil_img = pil_img.resize(new_size, Image.BILINEAR)
-
-        return self.grading_service.generate_gradcam(
-            pil_image=pil_img,
-            target_grade=target_grade,
-            timeout_sec=timeout_sec
-        )

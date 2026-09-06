@@ -1,4 +1,4 @@
-_root: C:\Users\T SAILOHITH\Desktop\SIH\RetinaGuard
+_root: .
 augmentation:
   brightness_jitter: 0.2
   contrast_jitter: 0.2

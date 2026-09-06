@@ -25,7 +25,7 @@ It runs locally on your machine via a lightweight Python/FastAPI backend and nat
 
 ### The ONE Launch Command
 
-From the project root directory (`c:\Users\T SAILOHITH\Desktop\SIH\RetinaGuard`):
+From the project root directory:
 
 ```bash
 python webapp/run.py

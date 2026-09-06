@@ -165,25 +165,13 @@ class TestRetinaGuardWebApp(unittest.TestCase):
         self.assertAlmostEqual(prob_sum, 1.0, delta=0.01)
         self.assertEqual(g["model_version"], "EXP-001")
 
-    # 11. Decoupled Grad-CAM & Dedicated Endpoint
-    def test_11_gradcam_decoupled_and_dedicated_endpoint(self):
-        # A: Core screening returns immediately with Grad-CAM status ready
+    # 11. Grad-CAM
+    def test_11_gradcam(self):
         resp = client.post("/api/analyze", data={"demo_id": "case_3"})
         self.assertEqual(resp.status_code, 200)
-        res = resp.json()
-        self.assertIn("grading", res)
-        g = res["grading"]
-        self.assertIn("gradcam", g)
-        self.assertEqual(g["gradcam"]["endpoint"], "/api/gradcam")
-        self.assertIsNone(res["overlays"]["heatmap"])
-
-        # B: Dedicated /api/gradcam endpoint generates real PyTorch heatmap
-        gcam_resp = client.post("/api/gradcam", data={"demo_id": "case_3", "target_grade": 2})
-        self.assertEqual(gcam_resp.status_code, 200)
-        gcam_data = gcam_resp.json()
-        self.assertTrue(gcam_data["gradcam_available"])
-        self.assertIsNotNone(gcam_data["gradcam_url"])
-        self.assertTrue(gcam_data["gradcam_url"].startswith("/outputs/"))
+        g = resp.json()["grading"]
+        self.assertIsNotNone(g["gradcam_url"])
+        self.assertTrue(g["gradcam_url"].startswith("/outputs/"))
 
     # 12. Recommendation
     def test_12_recommendation(self):
@@ -241,94 +229,6 @@ class TestRetinaGuardWebApp(unittest.TestCase):
         self.assertEqual(a6.status_code, 200)
         self.assertEqual(a6.json()["screening_status"], "UNGRADABLE")
         self.assertTrue(a6.json()["safety_gate_triggered"])
-
-    # 16. Regression: Screening API returns a response promptly without hanging
-    def test_16_regression_screening_api_returns_response(self):
-        import time
-        t0 = time.time()
-        resp = client.post("/api/analyze", data={"demo_id": "case_1"})
-        elapsed = time.time() - t0
-        self.assertEqual(resp.status_code, 200)
-        self.assertLess(elapsed, 5.0, "Decoupled screening API must complete well under 5s")
-        data = resp.json()
-        self.assertIn("grading", data)
-        self.assertIn("grade", data["grading"])
-
-    # 17. Regression: Backend exceptions return structured error and do not hang
-    def test_17_regression_backend_exceptions_no_hang(self):
-        # Unknown demo case ID -> must return 400
-        resp1 = client.post("/api/analyze", data={"demo_id": "nonexistent_demo_xyz"})
-        self.assertEqual(resp1.status_code, 400)
-        self.assertIn("Unknown demo case ID", resp1.json()["detail"])
-
-        # Empty POST body -> must return 400
-        resp2 = client.post("/api/analyze", data={})
-        self.assertEqual(resp2.status_code, 400)
-        self.assertIn("No fundus image provided", resp2.json()["detail"])
-
-    # 18. Regression: Grad-CAM failure does not return 500 error
-    def test_18_regression_gradcam_failure_fallback(self):
-        from unittest.mock import patch
-        from explainability.gradcam import GradCAM
-
-        # Mock GradCAM.generate to throw a simulated RuntimeError on /api/gradcam
-        with patch.object(GradCAM, "generate", side_effect=RuntimeError("Simulated GradCAM hook failure")):
-            resp = client.post("/api/gradcam", data={"demo_id": "case_1", "target_grade": 0})
-            self.assertEqual(resp.status_code, 200, "Endpoint must return 200 with structured failure")
-            data = resp.json()
-            self.assertFalse(data["gradcam_available"])
-            self.assertIsNone(data["gradcam_url"])
-            self.assertIn("error", data)
-
-    # 19. Regression: High resolution image clamping and memory safety
-    def test_19_regression_large_image_clamping(self):
-        img = cv2.imread(str(self.case1_path))
-        # Create 1568x1568 high-res image by tiling to preserve high-frequency features
-        large_img = np.tile(img, (7, 7, 1))
-        _, enc = cv2.imencode(".png", large_img)
-        files = {"file": ("large_fundus.png", io.BytesIO(enc.tobytes()), "image/png")}
-        resp = client.post("/api/analyze", files=files)
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertEqual(data["image_info"]["width"], 1568)
-        self.assertEqual(data["image_info"]["height"], 1568)
-        self.assertEqual(data["screening_status"], "GRADABLE")
-        self.assertIsNotNone(data["grading"])
-        self.assertIn("grade", data["grading"])
-
-    # 20. Regression: Frontend code contains AbortController timeout & error clearing
-    def test_20_regression_frontend_timeout_and_error_handling(self):
-        js_path = ROOT / "webapp" / "static" / "js" / "app.js"
-        self.assertTrue(js_path.exists())
-        js_content = js_path.read_text(encoding="utf-8")
-        self.assertIn("AbortController", js_content, "Frontend must use AbortController")
-        self.assertIn("45000", js_content, "Frontend must configure screening timeout")
-        self.assertIn("processingOverlay.style.display = \"none\"", js_content, "Overlay must be cleared in finally")
-
-    # 21. Regression: Grad-CAM timeout guard catches slow execution gracefully
-    def test_21_gradcam_timeout_fallback(self):
-        from unittest.mock import patch
-        import time
-
-        def slow_generate(*args, **kwargs):
-            time.sleep(0.15)
-            return None
-
-        with patch("explainability.gradcam.GradCAM.generate", side_effect=slow_generate):
-            from webapp.main import screening_service, DEMO_DIR
-            sample_path = DEMO_DIR / "demo_case1_grade0.png"
-            res = screening_service.run_gradcam(sample_path, target_grade=0, timeout_sec=0.02)
-            self.assertFalse(res["gradcam_available"])
-            self.assertIn("budget", res["error"])
-
-    # 22. Safety Gate: Ungradable scans completely bypass Grad-CAM
-    def test_22_ungradable_bypasses_gradcam(self):
-        resp = client.post("/api/analyze", data={"demo_id": "case_6"})
-        self.assertEqual(resp.status_code, 200)
-        res = resp.json()
-        self.assertTrue(res["safety_gate_triggered"])
-        self.assertIsNone(res["grading"], "Grading must be null for ungradable images")
-        self.assertIsNone(res.get("overlays"), "Overlays must be absent or null for ungradable images")
 
 
 if __name__ == "__main__":

@@ -10,9 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentAnalysis = null;
   let currentOverlays = {};
   let demoCases = [];
-  let gradcamLoading = false;
-  let gradcamError = null;
-  let currentLayer = "original";
 
   // DOM Elements
   const selectDemoCase = document.getElementById("select-demo-case");
@@ -191,12 +188,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     recTitle.textContent = "Standard Triage Recommendation";
     recBody.textContent = msg || "Upload or load an image to receive clinical guidance.";
-
-    gradcamLoading = false;
-    gradcamError = null;
-    currentLayer = "original";
-    const heatmapBtn = document.querySelector('.toggle-btn[data-layer="heatmap"]');
-    if (heatmapBtn) heatmapBtn.textContent = "Heatmap (Grad-CAM)";
   }
 
   // 4. Run Analysis
@@ -219,45 +210,22 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("exam_id", inputExamId.value || "EX-00412");
     formData.append("eye", selectEye.value || "Right (OD)");
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
-
     try {
       const resp = await fetch("/api/analyze", {
         method: "POST",
-        body: formData,
-        signal: controller.signal
+        body: formData
       });
-      clearTimeout(timeoutId);
 
       if (!resp.ok) {
-        let errorMsg = `Server error (${resp.status} ${resp.statusText})`;
-        try {
-          const errorData = await resp.json();
-          if (errorData && errorData.detail) {
-            errorMsg = errorData.detail;
-          }
-        } catch (e) {
-          // Non-JSON response (e.g. Render 502/504 Bad Gateway HTML)
-          if (resp.status === 502 || resp.status === 504) {
-            errorMsg = "The server took too long to process the request or restarted (502/504 Gateway Timeout). Please try again.";
-          } else {
-            errorMsg = `Server returned status ${resp.status}. Please check your connection and image.`;
-          }
-        }
-        throw new Error(errorMsg);
+        const errorData = await resp.json();
+        throw new Error(errorData.detail || "Screening analysis failed.");
       }
 
       currentAnalysis = await resp.json();
       renderAnalysisResults(currentAnalysis);
     } catch (err) {
-      clearTimeout(timeoutId);
-      let displayErr = err.message;
-      if (err.name === "AbortError") {
-        displayErr = "Screening analysis timed out after 45 seconds. The server may be busy or the image requires more time. Please retry.";
-      }
-      alert("Screening Error: " + displayErr);
-      resetResults("Analysis halted: " + displayErr);
+      alert("Error: " + err.message);
+      resetResults("Analysis error occurred.");
     } finally {
       btnAnalyze.disabled = false;
       analyzeSpinner.style.display = "none";
@@ -384,76 +352,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (data.report) {
       setupReportLinks(data.report);
     }
-
-    // Trigger background Grad-CAM explainability asynchronously for gradable images
-    if (!data.safety_gate_triggered && data.quality && data.quality.gradable && data.grading) {
-      fetchGradCAM(data);
-    }
-  }
-
-  async function fetchGradCAM(analysisData) {
-    gradcamLoading = true;
-    gradcamError = null;
-    const heatmapBtn = document.querySelector('.toggle-btn[data-layer="heatmap"]');
-    if (heatmapBtn) {
-      heatmapBtn.textContent = "Heatmap (Loading...)";
-    }
-
-    const formData = new FormData();
-    if (currentDemoId) {
-      formData.append("demo_id", currentDemoId);
-    }
-    if (analysisData.image_info && analysisData.image_info.original_url) {
-      formData.append("image_url", analysisData.image_info.original_url);
-    }
-    if (analysisData.grading && analysisData.grading.grade !== undefined) {
-      formData.append("target_grade", analysisData.grading.grade);
-    }
-
-    try {
-      const resp = await fetch("/api/gradcam", {
-        method: "POST",
-        body: formData
-      });
-
-      if (!resp.ok) {
-        throw new Error(`Grad-CAM server error (${resp.status})`);
-      }
-
-      const gData = await resp.json();
-      gradcamLoading = false;
-
-      if (gData.gradcam_available && gData.gradcam_url) {
-        currentOverlays["heatmap"] = gData.gradcam_url;
-        if (analysisData.overlays) {
-          analysisData.overlays.heatmap = gData.gradcam_url;
-        }
-        if (heatmapBtn) {
-          heatmapBtn.textContent = "Heatmap (Grad-CAM)";
-        }
-        if (currentLayer === "heatmap") {
-          mainImageView.src = gData.gradcam_url;
-          setActiveLayer("heatmap");
-        }
-      } else {
-        gradcamError = gData.error || "Grad-CAM explainability exceeded CPU budget.";
-        if (heatmapBtn) {
-          heatmapBtn.textContent = "Heatmap (Unavailable)";
-        }
-        if (currentLayer === "heatmap") {
-          setActiveLayer("heatmap");
-        }
-      }
-    } catch (err) {
-      gradcamLoading = false;
-      gradcamError = err.message || "Failed to generate saliency map.";
-      if (heatmapBtn) {
-        heatmapBtn.textContent = "Heatmap (Unavailable)";
-      }
-      if (currentLayer === "heatmap") {
-        setActiveLayer("heatmap");
-      }
-    }
   }
 
   function getGradeColor(grade) {
@@ -470,7 +368,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function setActiveLayer(layer) {
-    currentLayer = layer;
     document.querySelectorAll(".toggle-btn").forEach(b => {
       b.classList.toggle("active", b.getAttribute("data-layer") === layer);
     });
@@ -489,22 +386,10 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     } else if (layer === "heatmap") {
       layerLegend.style.display = "flex";
-      if (currentOverlays[layer]) {
-        layerLegend.innerHTML = `
-          <span class="legend-item"><span class="legend-swatch" style="background:linear-gradient(to right, blue, cyan, yellow, red);"></span> Model Attention (Grad-CAM Saliency)</span>
-          <small style="color:#656d76; margin-left:6px;">Highlights neural decision regions (Explainability, not lesion segmentation)</small>
-        `;
-      } else if (gradcamLoading) {
-        layerLegend.innerHTML = `
-          <span class="legend-item"><span class="legend-swatch" style="background:#0969da;"></span> ⏳ Computing PyTorch Grad-CAM saliency map in background...</span>
-          <small style="color:#656d76; margin-left:6px;">Screening classification & lesion findings are complete and 100% verified.</small>
-        `;
-      } else {
-        layerLegend.innerHTML = `
-          <span class="legend-item" style="color:#cf222e;">⚠️ Saliency map unavailable for this scan.</span>
-          <small style="color:#656d76; margin-left:6px;">${gradcamError ? gradcamError + ' — ' : ''}Primary ICDR classification & lesion findings remain 100% valid.</small>
-        `;
-      }
+      layerLegend.innerHTML = `
+        <span class="legend-item"><span class="legend-swatch" style="background:linear-gradient(to right, blue, cyan, yellow, red);"></span> Model Attention (Grad-CAM Saliency)</span>
+        <small style="color:#656d76; margin-left:6px;">Highlights neural decision regions (Explainability, not lesion segmentation)</small>
+      `;
     } else if (layer === "vessels") {
       layerLegend.style.display = "flex";
       layerLegend.innerHTML = `

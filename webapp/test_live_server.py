@@ -44,17 +44,8 @@ with urllib.request.urlopen(req) as resp:
     print(f"   EXP-001 Grading : Grade {res['grading']['grade']} ({res['grading']['severity_name']})")
     print(f"   Confidence      : {res['grading']['confidence_percent']}%")
     print(f"   Referable DR    : {res['grading']['referral']} ({res['grading']['referral_badge']})")
-    print(f"   Grad-CAM Status : {res['grading'].get('gradcam', {})}")
+    print(f"   Grad-CAM URL    : {res['grading']['gradcam_url']}")
     print(f"   Report URL      : {res['report']['relative_url']}")
-
-print("\n4b. Dedicated Grad-CAM Request on Demo Case 3:")
-req_gcam = urllib.parse.urlencode({"demo_id": "case_3", "target_grade": 2}).encode("utf-8")
-req_g = urllib.request.Request(f"{BASE_URL}/api/gradcam", data=req_gcam, method="POST")
-with urllib.request.urlopen(req_g) as resp_g:
-    res_g = json.loads(resp_g.read().decode("utf-8"))
-    print(f"   Grad-CAM Avail  : {res_g.get('gradcam_available')}")
-    print(f"   Grad-CAM URL    : {res_g.get('gradcam_url')}")
-    assert res_g.get("gradcam_available") is True
 
 print("\n5. Testing Ungradable Demo Case 6 (Safety Gate):")
 req_data6 = urllib.parse.urlencode({"demo_id": "case_6"}).encode("utf-8")
