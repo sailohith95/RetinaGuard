@@ -35,12 +35,11 @@ predictor = DRPredictor(cfg)
 SAMPLE_DIR = ROOT / "demo" / "sample_images"
 
 cases_info = [
-    ("Case 1 (Grade 0)", SAMPLE_DIR / "demo_case1_grade0.png", 0),
-    ("Case 2 (Grade 1)", SAMPLE_DIR / "demo_case2_grade1.png", 1),
-    ("Case 3 (Grade 2)", SAMPLE_DIR / "demo_case3_grade2.png", 2),
-    ("Case 4 (Grade 3)", SAMPLE_DIR / "demo_case4_grade3.png", 3),
-    ("Case 5 (Grade 4)", SAMPLE_DIR / "demo_case5_grade4.png", 4),
-    ("Case 6 (Ungradable)", SAMPLE_DIR / "demo_case6_ungradable.png", -1),
+    ("Grade 0 (No DR)", SAMPLE_DIR / "demo_grade0.png", 0),
+    ("Grade 1 (Mild NPDR)", SAMPLE_DIR / "demo_grade1.png", 1),
+    ("Grade 2 (Moderate NPDR)", SAMPLE_DIR / "demo_grade2.png", 2),
+    ("Grade 3 (Severe NPDR)", SAMPLE_DIR / "demo_grade3.png", 3),
+    ("Grade 4 (Proliferative DR)", SAMPLE_DIR / "demo_grade4.png", 4),
 ]
 
 def assess_quality(img_bgr):
@@ -274,12 +273,12 @@ for test_name, mode, payload in error_tests:
         q = assess_quality(arr)
         print(f"  Result: Quality Safety Halt -> Status: {q['status']}, Gradable: {q['gradable']}, Reason: {q['reason']}")
     elif mode == "img_blur":
-        base = cv2.imread(str(SAMPLE_DIR / "demo_case1_grade0.png"))
+        base = cv2.imread(str(SAMPLE_DIR / "demo_grade0.png"))
         blur = cv2.GaussianBlur(base, (51, 51), 25.0)
         q = assess_quality(blur)
         print(f"  Result: Quality Safety Halt -> Status: {q['status']}, Gradable: {q['gradable']}, Reason: {q['reason']}")
     elif mode == "img_valid":
-        base = cv2.imread(str(SAMPLE_DIR / "demo_case1_grade0.png"))
+        base = cv2.imread(str(SAMPLE_DIR / "demo_grade0.png"))
         q = assess_quality(base)
         res = predictor.predict(Image.fromarray(cv2.cvtColor(base, cv2.COLOR_BGR2RGB)))
         print(f"  Result: Normal Processing -> Quality: {q['status']}, Predicted Grade: {res['grade']} ({res['severity']})")

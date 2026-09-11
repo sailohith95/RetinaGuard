@@ -43,12 +43,13 @@ SAMPLE_DIR = ROOT / "demo" / "sample_images"
 class TestRetinaGuardWebApp(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.case1_path = SAMPLE_DIR / "demo_case1_grade0.png"
-        cls.case3_path = SAMPLE_DIR / "demo_case3_grade2.png"
-        cls.case6_path = SAMPLE_DIR / "demo_case6_ungradable.png"
-        assert cls.case1_path.exists(), f"Missing {cls.case1_path}"
-        assert cls.case3_path.exists(), f"Missing {cls.case3_path}"
-        assert cls.case6_path.exists(), f"Missing {cls.case6_path}"
+        cls.grade0_path = SAMPLE_DIR / "demo_grade0.png"
+        cls.grade1_path = SAMPLE_DIR / "demo_grade1.png"
+        cls.grade2_path = SAMPLE_DIR / "demo_grade2.png"
+        cls.grade3_path = SAMPLE_DIR / "demo_grade3.png"
+        cls.grade4_path = SAMPLE_DIR / "demo_grade4.png"
+        for p in [cls.grade0_path, cls.grade1_path, cls.grade2_path, cls.grade3_path, cls.grade4_path]:
+            assert p.exists(), f"Missing {p}"
 
     # 1. Health endpoint
     def test_01_health_endpoint(self):
@@ -70,7 +71,7 @@ class TestRetinaGuardWebApp(unittest.TestCase):
 
     # 3. Valid image upload
     def test_03_valid_image_upload(self):
-        with open(self.case1_path, "rb") as fp:
+        with open(self.grade0_path, "rb") as fp:
             files = {"file": ("test_fundus.png", fp, "image/png")}
             data = {"patient_id": "PT-TEST", "exam_id": "EX-TEST", "eye": "Right (OD)"}
             resp = client.post("/api/analyze", files=files, data=data)
@@ -98,7 +99,7 @@ class TestRetinaGuardWebApp(unittest.TestCase):
 
     # 5. Quality assessment
     def test_05_quality_assessment(self):
-        resp = client.post("/api/analyze", data={"demo_id": "case_1"})
+        resp = client.post("/api/analyze", data={"demo_id": "grade_0"})
         self.assertEqual(resp.status_code, 200)
         q = resp.json()["quality"]
         self.assertIn("score", q)
@@ -109,10 +110,12 @@ class TestRetinaGuardWebApp(unittest.TestCase):
         self.assertGreater(q["score"], 50.0)
         self.assertEqual(q["status"], "GOOD")
 
-    # 6. Ungradable safety gate
+    # 6. Ungradable safety gate (tested on uploaded degraded image)
     def test_06_ungradable_safety_gate(self):
-        # Case 6 is ungradable
-        resp = client.post("/api/analyze", data={"demo_id": "case_6"})
+        bad_img = np.zeros((224, 224, 3), dtype=np.uint8)
+        _, buf = cv2.imencode(".png", bad_img)
+        files = {"file": ("dark_ungradable.png", io.BytesIO(buf.tobytes()), "image/png")}
+        resp = client.post("/api/analyze", files=files)
         self.assertEqual(resp.status_code, 200)
         res = resp.json()
         self.assertTrue(res["safety_gate_triggered"])
@@ -122,7 +125,7 @@ class TestRetinaGuardWebApp(unittest.TestCase):
 
     # 7. Enhancement
     def test_07_enhancement(self):
-        resp = client.post("/api/analyze", data={"demo_id": "case_3"})
+        resp = client.post("/api/analyze", data={"demo_id": "grade_2"})
         self.assertEqual(resp.status_code, 200)
         enh = resp.json()["enhancement"]
         self.assertIsNotNone(enh)
@@ -132,7 +135,7 @@ class TestRetinaGuardWebApp(unittest.TestCase):
 
     # 8. Structure analysis
     def test_08_structure_analysis(self):
-        resp = client.post("/api/analyze", data={"demo_id": "case_1"})
+        resp = client.post("/api/analyze", data={"demo_id": "grade_0"})
         self.assertEqual(resp.status_code, 200)
         st = resp.json()["structures"]
         self.assertTrue(st["optic_disc"]["detected"])
@@ -144,7 +147,7 @@ class TestRetinaGuardWebApp(unittest.TestCase):
 
     # 9. Lesion analysis
     def test_09_lesion_analysis(self):
-        resp = client.post("/api/analyze", data={"demo_id": "case_3"})
+        resp = client.post("/api/analyze", data={"demo_id": "grade_2"})
         self.assertEqual(resp.status_code, 200)
         les = resp.json()["lesions"]
         self.assertIn("microaneurysms", les)
@@ -156,7 +159,7 @@ class TestRetinaGuardWebApp(unittest.TestCase):
 
     # 10. EXP-001 inference
     def test_10_exp001_inference(self):
-        resp = client.post("/api/analyze", data={"demo_id": "case_1"})
+        resp = client.post("/api/analyze", data={"demo_id": "grade_0"})
         self.assertEqual(resp.status_code, 200)
         g = resp.json()["grading"]
         self.assertIn(g["grade"], [0, 1, 2, 3, 4])
@@ -167,7 +170,7 @@ class TestRetinaGuardWebApp(unittest.TestCase):
 
     # 11. Grad-CAM
     def test_11_gradcam(self):
-        resp = client.post("/api/analyze", data={"demo_id": "case_3"})
+        resp = client.post("/api/analyze", data={"demo_id": "grade_2"})
         self.assertEqual(resp.status_code, 200)
         g = resp.json()["grading"]
         self.assertIsNotNone(g["gradcam_url"])
@@ -175,8 +178,8 @@ class TestRetinaGuardWebApp(unittest.TestCase):
 
     # 12. Recommendation
     def test_12_recommendation(self):
-        # Case 3 -> Grade >= 2 (Referable)
-        resp = client.post("/api/analyze", data={"demo_id": "case_3"})
+        # Grade 2 -> Referable
+        resp = client.post("/api/analyze", data={"demo_id": "grade_2"})
         self.assertEqual(resp.status_code, 200)
         g = resp.json()["grading"]
         if g["grade"] >= 2:
@@ -187,7 +190,7 @@ class TestRetinaGuardWebApp(unittest.TestCase):
 
     # 13. Report generation
     def test_13_report_generation(self):
-        resp = client.post("/api/analyze", data={"demo_id": "case_1"})
+        resp = client.post("/api/analyze", data={"demo_id": "grade_0"})
         self.assertEqual(resp.status_code, 200)
         rep = resp.json()["report"]
         self.assertIsNotNone(rep)
@@ -204,10 +207,10 @@ class TestRetinaGuardWebApp(unittest.TestCase):
         resp = client.get("/api/demo-cases")
         self.assertEqual(resp.status_code, 200)
         cases = resp.json()
-        self.assertEqual(len(cases), 6)
+        self.assertEqual(len(cases), 5, "Curated demo section must contain exactly 5 demo options")
         case_ids = [c["id"] for c in cases]
-        self.assertIn("case_1", case_ids)
-        self.assertIn("case_6", case_ids)
+        self.assertEqual(case_ids, ["grade_0", "grade_1", "grade_2", "grade_3", "grade_4"])
+        self.assertNotIn("case_6", case_ids)
 
     # 15. Full end-to-end API flow
     def test_15_full_end_to_end_flow(self):
@@ -218,17 +221,62 @@ class TestRetinaGuardWebApp(unittest.TestCase):
         # Step 2: Load demo cases
         c = client.get("/api/demo-cases")
         self.assertEqual(c.status_code, 200)
+        self.assertEqual(len(c.json()), 5)
         
-        # Step 3: Analyze Case 2 (Mild reference)
-        a2 = client.post("/api/analyze", data={"demo_id": "case_2"})
-        self.assertEqual(a2.status_code, 200)
-        self.assertEqual(a2.json()["screening_status"], "GRADABLE")
+        # Step 3: Analyze Grade 1 (Mild NPDR)
+        a1 = client.post("/api/analyze", data={"demo_id": "grade_1"})
+        self.assertEqual(a1.status_code, 200)
+        self.assertEqual(a1.json()["screening_status"], "GRADABLE")
+        self.assertEqual(a1.json()["grading"]["grade"], 1)
         
-        # Step 4: Analyze Case 6 (Ungradable safety gate)
-        a6 = client.post("/api/analyze", data={"demo_id": "case_6"})
-        self.assertEqual(a6.status_code, 200)
-        self.assertEqual(a6.json()["screening_status"], "UNGRADABLE")
-        self.assertTrue(a6.json()["safety_gate_triggered"])
+        # Step 4: Analyze ungradable uploaded image (Safety gate)
+        bad_img = np.zeros((224, 224, 3), dtype=np.uint8)
+        _, buf = cv2.imencode(".png", bad_img)
+        files = {"file": ("dark.png", io.BytesIO(buf.tobytes()), "image/png")}
+        a_bad = client.post("/api/analyze", files=files)
+        self.assertEqual(a_bad.status_code, 200)
+        self.assertEqual(a_bad.json()["screening_status"], "UNGRADABLE")
+        self.assertTrue(a_bad.json()["safety_gate_triggered"])
+
+    # 16. Demo case sequential switching: Grade 0 -> 1 -> 2 -> 3 -> 4 -> 0
+    def test_16_demo_switching_sequence(self):
+        # Grade 0
+        r0 = client.post("/api/analyze", data={"demo_id": "grade_0"}).json()
+        self.assertEqual(r0["screening_status"], "GRADABLE")
+        self.assertEqual(r0["demo_reference"]["reference_grade"], 0)
+        self.assertEqual(r0["grading"]["grade"], 0)
+
+        # Grade 1
+        r1 = client.post("/api/analyze", data={"demo_id": "grade_1"}).json()
+        self.assertEqual(r1["screening_status"], "GRADABLE")
+        self.assertEqual(r1["demo_reference"]["reference_grade"], 1)
+        self.assertEqual(r1["grading"]["grade"], 1)
+
+        # Grade 2
+        r2 = client.post("/api/analyze", data={"demo_id": "grade_2"}).json()
+        self.assertEqual(r2["screening_status"], "GRADABLE")
+        self.assertEqual(r2["demo_reference"]["reference_grade"], 2)
+        self.assertEqual(r2["grading"]["grade"], 2)
+
+        # Grade 3
+        r3 = client.post("/api/analyze", data={"demo_id": "grade_3"}).json()
+        self.assertEqual(r3["screening_status"], "GRADABLE")
+        self.assertEqual(r3["demo_reference"]["reference_grade"], 3)
+        self.assertEqual(r3["grading"]["grade"], 3)
+
+        # Grade 4
+        r4 = client.post("/api/analyze", data={"demo_id": "grade_4"}).json()
+        self.assertEqual(r4["screening_status"], "GRADABLE")
+        self.assertEqual(r4["demo_reference"]["reference_grade"], 4)
+        self.assertEqual(r4["grading"]["grade"], 4)
+
+        # Grade 0 again (Confirm no state bleed/residue from previous Grade 4)
+        r0_second = client.post("/api/analyze", data={"demo_id": "grade_0"}).json()
+        self.assertEqual(r0_second["screening_status"], "GRADABLE")
+        self.assertFalse(r0_second["safety_gate_triggered"])
+        self.assertEqual(r0_second["demo_reference"]["reference_grade"], 0)
+        self.assertEqual(r0_second["demo_reference"]["id"], "grade_0")
+        self.assertEqual(r0_second["grading"]["grade"], 0)
 
 
 if __name__ == "__main__":

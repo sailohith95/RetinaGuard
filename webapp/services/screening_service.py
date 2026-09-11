@@ -41,61 +41,52 @@ class ScreeningService:
         self.demo_dir = ROOT / "demo" / "sample_images"
 
     def get_demo_cases(self) -> list:
-        """Returns the 6 curated authentic demo screening cases."""
+        """Returns the 5 curated authentic demo screening grades (Grades 0 to 4)."""
         all_cases = [
             {
-                "id": "case_1",
-                "label": "Case 1 — Normal Retina (No DR)",
+                "id": "grade_0",
+                "label": "Grade 0 — No DR",
                 "reference_grade": 0,
                 "reference_name": "No DR",
-                "filename": "demo_case1_grade0.png",
-                "image_url": "/demo/sample_images/demo_case1_grade0.png",
-                "description": "Healthy retinal fundus with clear optic disc and macula. Expected negative screening."
+                "filename": "demo_grade0.png",
+                "image_url": "/demo/sample_images/demo_grade0.png",
+                "description": "Authentic normal retinal fundus with intact vasculature, clear macula, and no microvascular lesions."
             },
             {
-                "id": "case_2",
-                "label": "Case 2 — Mild NPDR Reference",
+                "id": "grade_1",
+                "label": "Grade 1 — Mild NPDR",
                 "reference_grade": 1,
                 "reference_name": "Mild NPDR",
-                "filename": "demo_case2_grade1.png",
-                "image_url": "/demo/sample_images/demo_case2_grade1.png",
-                "description": "Early microvascular alterations with isolated microaneurysms. Non-referable clinical triage."
+                "filename": "demo_grade1.png",
+                "image_url": "/demo/sample_images/demo_grade1.png",
+                "description": "Authentic early-stage NPDR with microaneurysms. Clinical triage indicates non-referable observation."
             },
             {
-                "id": "case_3",
-                "label": "Case 3 — Moderate NPDR Reference",
+                "id": "grade_2",
+                "label": "Grade 2 — Moderate NPDR",
                 "reference_grade": 2,
                 "reference_name": "Moderate NPDR",
-                "filename": "demo_case3_grade2.png",
-                "image_url": "/demo/sample_images/demo_case3_grade2.png",
-                "description": "Hard exudates and microaneurysms present. Referable DR threshold triggered (3–6 month referral)."
+                "filename": "demo_grade2.png",
+                "image_url": "/demo/sample_images/demo_grade2.png",
+                "description": "Authentic moderate NPDR with hard exudates and microvascular changes. Reaches referable DR threshold."
             },
             {
-                "id": "case_4",
-                "label": "Case 4 — Severe NPDR Reference",
+                "id": "grade_3",
+                "label": "Grade 3 — Severe NPDR",
                 "reference_grade": 3,
                 "reference_name": "Severe NPDR",
-                "filename": "demo_case4_grade3.png",
-                "image_url": "/demo/sample_images/demo_case4_grade3.png",
-                "description": "Multiple intra-retinal hemorrhages and microvascular abnormalities. Prompt referral required (1 month)."
+                "filename": "demo_grade3.png",
+                "image_url": "/demo/sample_images/demo_grade3.png",
+                "description": "Authentic severe NPDR exhibiting marked intra-retinal hemorrhages and vascular anomalies. Prompt specialist referral."
             },
             {
-                "id": "case_5",
-                "label": "Case 5 — Proliferative DR Reference",
+                "id": "grade_4",
+                "label": "Grade 4 — Proliferative DR",
                 "reference_grade": 4,
                 "reference_name": "Proliferative DR",
-                "filename": "demo_case5_grade4.png",
-                "image_url": "/demo/sample_images/demo_case5_grade4.png",
-                "description": "High lesion burden with neovascularization risk. Referable to retina specialist."
-            },
-            {
-                "id": "case_6",
-                "label": "Case 6 — Poor Quality / Ungradable",
-                "reference_grade": -1,
-                "reference_name": "Ungradable",
-                "filename": "demo_case6_ungradable.png",
-                "image_url": "/demo/sample_images/demo_case6_ungradable.png",
-                "description": "Severely blurred and underexposed fundus scan. Demonstrates patient safety quality gate."
+                "filename": "demo_grade4.png",
+                "image_url": "/demo/sample_images/demo_grade4.png",
+                "description": "Authentic proliferative diabetic retinopathy with advanced pathology and high neovascularization risk. Specialist referral required."
             }
         ]
         return [c for c in all_cases if (self.demo_dir / c["filename"]).is_file()]

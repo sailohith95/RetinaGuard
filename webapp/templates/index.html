@@ -56,10 +56,10 @@
 
     <div class="action-fields">
       <div class="demo-selector-group">
-        <label>Curated Demo Scenarios</label>
+        <label>Curated Demo Grades</label>
         <div class="input-with-button">
           <select id="select-demo-case">
-            <option value="">-- Choose authentic demo case --</option>
+            <option value="">Choose Demo Grade</option>
           </select>
           <button class="btn btn-secondary" id="btn-load-demo">Load Demo</button>
         </div>
@@ -203,6 +203,20 @@
               <div class="grade-prefix">ICDR DR Screening Severity</div>
               <div class="grade-headline" id="text-grade-headline">Awaiting Analysis</div>
               <div class="grade-subtext" id="text-grade-confidence">Run screening to evaluate fundus image</div>
+            </div>
+
+            <!-- Authentic Reference vs AI Model Comparison -->
+            <div class="demo-comparison-box" id="demo-comparison-box" style="display: none; margin: 10px 0; padding: 10px 12px; background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+                <div>
+                  <span style="color: #656d76; font-size: 11px; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 2px;">Reference Grade</span>
+                  <div id="val-reference-grade" style="font-weight: 600; color: #1f2328;">--</div>
+                </div>
+                <div>
+                  <span style="color: #656d76; font-size: 11px; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 2px;">AI Prediction (EXP-001)</span>
+                  <div id="val-ai-prediction" style="font-weight: 600; color: #1f2328;">--</div>
+                </div>
+              </div>
             </div>
 
             <!-- Class Probabilities Distribution -->

@@ -40,7 +40,7 @@ class TestLesionSegmentation(unittest.TestCase):
         cls.idrid_dir = ROOT / "data" / "idrid" / "A. Segmentation"
         cls.model_onnx = ROOT / "models" / "experiments" / "lesion_segmentation" / "lesion_unet.onnx"
         cls.model_pt = ROOT / "models" / "experiments" / "lesion_segmentation" / "best_model.pt"
-        cls.demo_img_path = ROOT / "demo" / "sample_images" / "demo_case1_grade0.png"
+        cls.demo_img_path = ROOT / "demo" / "sample_images" / "demo_grade0.png"
         cls.pipeline = LesionSegmentationPipeline()
 
     def test_01_dataset_loader(self):

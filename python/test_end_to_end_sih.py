@@ -63,12 +63,11 @@ class TestRetinaGuardSIH(unittest.TestCase):
         
         # Load sample demo images
         cls.sample_dir = cls.root / "demo" / "sample_images"
-        cls.demo_case1 = cls.sample_dir / "demo_case1_grade0.png"
-        cls.demo_case2 = cls.sample_dir / "demo_case2_grade1.png"
-        cls.demo_case3 = cls.sample_dir / "demo_case3_grade2.png"
-        cls.demo_case4 = cls.sample_dir / "demo_case4_grade3.png"
-        cls.demo_case5 = cls.sample_dir / "demo_case5_grade4.png"
-        cls.demo_case6 = cls.sample_dir / "demo_case6_ungradable.png"
+        cls.demo_grade0 = cls.sample_dir / "demo_grade0.png"
+        cls.demo_grade1 = cls.sample_dir / "demo_grade1.png"
+        cls.demo_grade2 = cls.sample_dir / "demo_grade2.png"
+        cls.demo_grade3 = cls.sample_dir / "demo_grade3.png"
+        cls.demo_grade4 = cls.sample_dir / "demo_grade4.png"
         
         # Results output dir
         cls.results_dir = cls.root / "results" / "final_validation"
@@ -79,7 +78,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_01_image_quality_assessment(self):
         """Test sharpness, illumination, contrast, and overall quality score."""
-        img = cv2.imread(str(self.demo_case1))
+        img = cv2.imread(str(self.demo_grade0))
         self.assertIsNotNone(img, "Could not load test image")
         
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -99,9 +98,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_02_ungradable_detection(self):
         """Test that poor quality/blurred/dark images are flagged as ungradable."""
-        img_bad = cv2.imread(str(self.demo_case6))
-        self.assertIsNotNone(img_bad, "Could not load ungradable test image")
-        
+        img_bad = np.zeros((512, 512, 3), dtype=np.uint8)
         gray = cv2.cvtColor(img_bad, cv2.COLOR_BGR2GRAY)
         lap_var = cv2.Laplacian(gray, cv2.CV_64F).var()
         mean_lum = float(np.mean(gray))
@@ -118,7 +115,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_03_clahe_enhancement(self):
         """Test CLAHE green channel contrast enhancement."""
-        img = cv2.imread(str(self.demo_case2))
+        img = cv2.imread(str(self.demo_grade1))
         green = img[:, :, 1]
         
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -133,7 +130,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_04_optic_disc_detection(self):
         """Test optic disc centroid localization and binary circular mask."""
-        img = cv2.imread(str(self.demo_case1))
+        img = cv2.imread(str(self.demo_grade0))
         h, w = img.shape[:2]
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
@@ -156,7 +153,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_05_fovea_localization(self):
         """Test fovea anatomical geometric projection from optic disc."""
-        img = cv2.imread(str(self.demo_case1))
+        img = cv2.imread(str(self.demo_grade0))
         h, w = img.shape[:2]
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (31, 31), 0)
@@ -176,7 +173,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_06_vessel_segmentation_and_density(self):
         """Test vessel segmentation using morphological black-top-hat and density %."""
-        img = cv2.imread(str(self.demo_case1))
+        img = cv2.imread(str(self.demo_grade0))
         green = img[:, :, 1]
         
         # Black top-hat extracts dark tubular structures
@@ -197,7 +194,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_07_hard_exudates_candidate_detection(self):
         """Test hard exudate detection with optic disc exclusion."""
-        img = cv2.imread(str(self.demo_case3))  # Grade 2 (Moderate NPDR with exudates)
+        img = cv2.imread(str(self.demo_grade2))  # Grade 2 (Moderate NPDR with exudates)
         h, w = img.shape[:2]
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
@@ -219,7 +216,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_08_microaneurysm_candidates(self):
         """Test microaneurysm candidate detection using top-hat morphology."""
-        img = cv2.imread(str(self.demo_case2))  # Grade 1 (Mild NPDR with MAs)
+        img = cv2.imread(str(self.demo_grade1))  # Grade 1 (Mild NPDR with MAs)
         green = img[:, :, 1]
         
         # White top-hat on inverted green channel detects small isolated dark dots
@@ -242,7 +239,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_09_hemorrhage_candidates(self):
         """Test dark lesion hemorrhage candidate segmentation."""
-        img = cv2.imread(str(self.demo_case4))  # Grade 3 (Severe NPDR)
+        img = cv2.imread(str(self.demo_grade3))  # Grade 3 (Severe NPDR)
         green = img[:, :, 1]
         
         inv_green = 255 - green
@@ -281,7 +278,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
         pt_path = self.root / "models" / "aptos_efficientnet" / "best_model.pt"
         self.assertTrue(pt_path.exists(), f"EXP-001 PyTorch weights not found at {pt_path}")
         
-        pil_img = Image.open(self.demo_case1).convert("RGB")
+        pil_img = Image.open(self.demo_grade0).convert("RGB")
         res = self.predictor.predict(pil_img)
         
         self.assertIn("grade", res)
@@ -300,7 +297,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
         onnx_path = self.root / "models" / "aptos_efficientnet" / "best_model.onnx"
         self.assertTrue(onnx_path.exists(), f"EXP-001 ONNX model not found at {onnx_path}")
         
-        pil_img = Image.open(self.demo_case1).convert("RGB")
+        pil_img = Image.open(self.demo_grade0).convert("RGB")
         tensor = self.preprocessor.preprocess_for_inference(pil_img)
         
         # PyTorch forward
@@ -321,7 +318,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_13_gradcam_generation(self):
         """Verify real Grad-CAM generation and heatmap overlay creation."""
-        pil_img = Image.open(self.demo_case3).convert("RGB")
+        pil_img = Image.open(self.demo_grade2).convert("RGB")
         gcam = GradCAM(self.predictor.model)
         tensor = self.preprocessor.preprocess_for_inference(pil_img)
         
@@ -383,11 +380,12 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # 16. Demo Cases Integrity
     # -------------------------------------------------------------------------
     def test_16_demo_cases_integrity(self):
-        """Verify all 6 demo images are present and loadable."""
+        """Verify all 5 demo images are present and loadable."""
         cases = [
-            self.demo_case1, self.demo_case2, self.demo_case3,
-            self.demo_case4, self.demo_case5, self.demo_case6
+            self.demo_grade0, self.demo_grade1, self.demo_grade2,
+            self.demo_grade3, self.demo_grade4
         ]
+        self.assertEqual(len(cases), 5)
         for c in cases:
             self.assertTrue(c.exists(), f"Demo case image {c} is missing")
             img = cv2.imread(str(c))
@@ -415,7 +413,7 @@ class TestRetinaGuardSIH(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_18_inference_latency_benchmark(self):
         """Test inference speed is suitable for real-time edge screening (< 2.5s)."""
-        pil_img = Image.open(self.demo_case1).convert("RGB")
+        pil_img = Image.open(self.demo_grade0).convert("RGB")
         
         # Warmup
         _ = self.predictor.predict(pil_img)

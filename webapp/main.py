@@ -93,9 +93,18 @@ async def analyze_image(
 
     if demo_id:
         cases = {c["id"]: c for c in screening_service.get_demo_cases()}
-        if demo_id not in cases:
-            raise HTTPException(status_code=400, detail=f"Unknown demo case ID: {demo_id}")
-        case_info = cases[demo_id]
+        # Resolve ID (supporting grade_0..grade_4 as primary, and legacy case_1..case_5 aliases)
+        alias_map = {
+            "case_1": "grade_0",
+            "case_2": "grade_1",
+            "case_3": "grade_2",
+            "case_4": "grade_3",
+            "case_5": "grade_4"
+        }
+        resolved_id = alias_map.get(demo_id, demo_id)
+        if resolved_id not in cases:
+            raise HTTPException(status_code=400, detail=f"Unknown demo grade ID: {demo_id}")
+        case_info = cases[resolved_id]
         target_path = DEMO_DIR / case_info["filename"]
         original_url = case_info["image_url"]
         demo_ref = {

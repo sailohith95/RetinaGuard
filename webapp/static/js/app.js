@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentAnalysis = null;
   let currentOverlays = {};
   let demoCases = [];
+  let currentRequestId = 0;
 
   // DOM Elements
   const selectDemoCase = document.getElementById("select-demo-case");
@@ -50,6 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const badgeReferralStatus = document.getElementById("badge-referral-status");
   const textGradeHeadline = document.getElementById("text-grade-headline");
   const textGradeConfidence = document.getElementById("text-grade-confidence");
+  const demoComparisonBox = document.getElementById("demo-comparison-box");
+  const valReferenceGrade = document.getElementById("val-reference-grade");
+  const valAiPrediction = document.getElementById("val-ai-prediction");
   const probabilitiesSection = document.getElementById("probabilities-section");
   const probBarsContainer = document.getElementById("prob-bars-container");
 
@@ -93,10 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
         selectDemoCase.disabled = true;
         btnLoadDemo.disabled = true;
       } else {
+        selectDemoCase.innerHTML = '<option value="">Choose Demo Grade</option>';
         demoCases.forEach(c => {
           const opt = document.createElement("option");
           opt.value = c.id;
-          opt.textContent = `${c.label} (${c.reference_name})`;
+          opt.textContent = c.label;
           selectDemoCase.appendChild(opt);
         });
         selectDemoCase.disabled = false;
@@ -108,7 +113,60 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   loadDemoCases();
 
-  // 2. Upload handling
+  // 2. Demo Case Selection Handlers
+  function handleSelectDemoCase(demoId) {
+    if (!demoId) {
+      clearSelection();
+      return;
+    }
+
+    const selectedCase = demoCases.find(c => c.id === demoId);
+    if (!selectedCase) return;
+
+    // Associate current active state
+    currentDemoId = demoId;
+    currentFile = null;
+    fileUpload.value = "";
+    selectDemoCase.value = demoId;
+    currentRequestId++;
+
+    showImage(selectedCase.image_url, selectedCase.label);
+    imageMetaTag.textContent = `${selectedCase.label}`;
+    imageMetaTag.className = "badge badge-neutral";
+
+    // Immediately wipe out all previous analysis results so UI never shows stale data
+    resetResults(`Loaded authentic reference case (${selectedCase.reference_name}). Click Analyze Image ▶.`);
+    btnAnalyze.disabled = false;
+  }
+
+  function clearSelection() {
+    currentDemoId = null;
+    currentFile = null;
+    fileUpload.value = "";
+    selectDemoCase.value = "";
+    currentRequestId++;
+
+    emptyPlaceholder.style.display = "block";
+    mainImageView.style.display = "none";
+    mainImageView.src = "";
+    imageMetaTag.textContent = "No Image Loaded";
+    imageMetaTag.className = "badge badge-neutral";
+
+    resetResults("Select a demo case or upload an image to begin screening.");
+    btnAnalyze.disabled = true;
+  }
+
+  // Changing dropdown immediately switches case and clears stale results
+  selectDemoCase.addEventListener("change", (e) => {
+    handleSelectDemoCase(e.target.value);
+  });
+
+  // Load Demo button also loads the chosen case
+  btnLoadDemo.addEventListener("click", () => {
+    handleSelectDemoCase(selectDemoCase.value);
+  });
+
+  // 3. Upload handling
   btnTriggerUpload.addEventListener("click", () => fileUpload.click());
 
   fileUpload.addEventListener("change", (e) => {
@@ -118,6 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
     currentFile = file;
     currentDemoId = null;
     selectDemoCase.value = "";
+    currentRequestId++;
 
     // Local Preview
     const objectUrl = URL.createObjectURL(file);
@@ -128,27 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
     imageMetaTag.textContent = `${file.name} (${sizeKb} KB)`;
     imageMetaTag.className = "badge badge-neutral";
 
-    resetResults("Image loaded from file. Click Analyze Image to run screening.");
-    btnAnalyze.disabled = false;
-  });
-
-  // 3. Demo Case loading
-  btnLoadDemo.addEventListener("click", () => {
-    const demoId = selectDemoCase.value;
-    if (!demoId) return;
-
-    const selectedCase = demoCases.find(c => c.id === demoId);
-    if (!selectedCase) return;
-
-    currentDemoId = demoId;
-    currentFile = null;
-    fileUpload.value = "";
-
-    showImage(selectedCase.image_url, selectedCase.label);
-    imageMetaTag.textContent = `${selectedCase.label}`;
-    imageMetaTag.className = "badge badge-neutral";
-
-    resetResults(`Loaded authentic reference case (${selectedCase.reference_name}). Click Analyze Image.`);
+    resetResults("Image loaded from file. Click Analyze Image ▶ to run screening.");
     btnAnalyze.disabled = false;
   });
 
@@ -160,40 +199,75 @@ document.addEventListener("DOMContentLoaded", () => {
     mainImageView.alt = alt;
   }
 
-  // Reset results
+  // Reset results completely
   function resetResults(msg) {
+    // Clear state caches
+    currentAnalysis = null;
+    currentOverlays = {};
+
+    // Hide overlays & alert banners
     layerToggles.style.display = "none";
+    document.querySelectorAll(".toggle-btn").forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-layer") === "original");
+    });
     layerLegend.style.display = "none";
+    layerLegend.innerHTML = "";
     safetyAlertBox.style.display = "none";
+    safetyAlertBox.innerHTML = "";
     borderlineAlertBox.style.display = "none";
+    borderlineAlertBox.innerHTML = "";
     probabilitiesSection.style.display = "none";
+    probBarsContainer.innerHTML = "";
     reportActionBar.style.display = "none";
 
+    // Quality Panel
     badgeQualityStatus.textContent = "PENDING";
     badgeQualityStatus.className = "badge badge-neutral";
     valQualityScore.textContent = "--";
     qualityMeterFill.style.width = "0%";
+    qualityMeterFill.style.background = "#0969da";
     valQFocus.textContent = "--";
     valQIllum.textContent = "--";
     valQContrast.textContent = "--";
     valQFov.textContent = "--";
     boxQualityReason.style.display = "none";
+    textQualityReason.textContent = "--";
 
+    // DR Severity Panel
     badgeReferralStatus.textContent = "PENDING";
     badgeReferralStatus.className = "badge badge-neutral";
     textGradeHeadline.textContent = "Awaiting Analysis";
+    textGradeHeadline.style.color = "";
     textGradeConfidence.textContent = msg || "Ready to execute screening";
+    if (demoComparisonBox) demoComparisonBox.style.display = "none";
+    if (valReferenceGrade) valReferenceGrade.textContent = "--";
+    if (valAiPrediction) valAiPrediction.textContent = "--";
 
+    // Table & Lesions Panel
+    if (badgeLesionMode) {
+      badgeLesionMode.textContent = "PENDING";
+      badgeLesionMode.className = "badge badge-neutral";
+    }
     valOdStatus.textContent = "--";
+    if (valOdDetails) valOdDetails.textContent = "Morphological Peak / AI Mask";
     valFoveaStatus.textContent = "--";
+    if (valFoveaDetails) valFoveaDetails.textContent = "Temporal Geometric Projection";
     valVesselDensity.textContent = "--";
     valMaCount.textContent = "--";
+    if (valMaNotes) valMaNotes.textContent = "Candidate Detection (Top-hat)";
     valExCount.textContent = "--";
+    if (valExNotes) valExNotes.textContent = "Candidate Detection (Disc-masked)";
     valHeCount.textContent = "--";
+    if (valHeNotes) valHeNotes.textContent = "Candidate Detection (Dark lesions)";
+    if (valSeCount) valSeCount.textContent = "--";
+    if (valSeNotes) valSeNotes.textContent = "Cotton Wool Spots";
     valNvRisk.textContent = "--";
 
+    // Recommendation & Report
     recTitle.textContent = "Standard Triage Recommendation";
     recBody.textContent = msg || "Upload or load an image to receive clinical guidance.";
+    if (btnViewReport) btnViewReport.removeAttribute("href");
+    if (btnDownloadReport) btnDownloadReport.removeAttribute("href");
   }
 
   // 4. Run Analysis
@@ -204,6 +278,12 @@ document.addEventListener("DOMContentLoaded", () => {
     analyzeSpinner.style.display = "inline-block";
     analyzeText.textContent = "Analyzing...";
     processingOverlay.style.display = "flex";
+
+    // Stale result guard: tag request with unique ID
+    const requestId = ++currentRequestId;
+
+    // Reset results UI before analysis begins so old results never linger
+    resetResults("Executing screening pipeline...");
 
     const formData = new FormData();
     if (currentFile) {
@@ -227,16 +307,28 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(errorData.detail || "Screening analysis failed.");
       }
 
-      currentAnalysis = await resp.json();
-      renderAnalysisResults(currentAnalysis);
+      const result = await resp.json();
+
+      // Guard against stale response: if user switched image during analysis, discard!
+      if (requestId !== currentRequestId) {
+        console.warn("Discarding stale analysis response for older request", requestId);
+        return;
+      }
+
+      currentAnalysis = result;
+      renderAnalysisResults(result);
     } catch (err) {
-      alert("Error: " + err.message);
-      resetResults("Analysis error occurred.");
+      if (requestId === currentRequestId) {
+        alert("Error: " + err.message);
+        resetResults("Analysis error occurred: " + err.message);
+      }
     } finally {
-      btnAnalyze.disabled = false;
-      analyzeSpinner.style.display = "none";
-      analyzeText.textContent = "Analyze Image ▶";
-      processingOverlay.style.display = "none";
+      if (requestId === currentRequestId) {
+        btnAnalyze.disabled = false;
+        analyzeSpinner.style.display = "none";
+        analyzeText.textContent = "Analyze Image ▶";
+        processingOverlay.style.display = "none";
+      }
     }
   });
 
@@ -244,7 +336,13 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderAnalysisResults(data) {
     const q = data.quality;
 
-    // Quality Panel
+    // 1. Reset any existing alerts
+    safetyAlertBox.style.display = "none";
+    safetyAlertBox.innerHTML = "";
+    borderlineAlertBox.style.display = "none";
+    borderlineAlertBox.innerHTML = "";
+
+    // 2. Quality Panel
     valQualityScore.textContent = q.score;
     qualityMeterFill.style.width = `${q.score}%`;
     valQFocus.textContent = q.focus;
@@ -267,7 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
     boxQualityReason.style.display = "block";
     textQualityReason.textContent = q.reason;
 
-    // CRITICAL SAFETY GATE HANDLING: UNGRADABLE
+    // 3. CRITICAL SAFETY GATE HANDLING: UNGRADABLE
     if (data.safety_gate_triggered || !q.gradable) {
       safetyAlertBox.style.display = "block";
       safetyAlertBox.innerHTML = `
@@ -280,10 +378,46 @@ document.addEventListener("DOMContentLoaded", () => {
       badgeReferralStatus.className = "badge badge-ungradable";
       textGradeHeadline.textContent = "Screening Halted";
       textGradeHeadline.style.color = "#cf222e";
-      textGradeConfidence.textContent = "Image quality is insufficient to produce a reliable diagnosis.";
 
+      const ref = data.demo_reference;
+      if (ref) {
+        textGradeConfidence.innerHTML = `<strong>Reference:</strong> ${ref.label} &bull; <strong>Status:</strong> Rejected by Image Quality Gate (Score: ${q.score}/100)`;
+      } else {
+        textGradeConfidence.textContent = "Image quality is insufficient to produce a reliable diagnosis.";
+      }
+
+      // Hide and clear probabilities for ungradable images
+      probabilitiesSection.style.display = "none";
+      probBarsContainer.innerHTML = "";
+
+      // Explicitly indicate halted status in Landmarks & Lesions
+      if (badgeLesionMode) {
+        badgeLesionMode.textContent = "HALTED";
+        badgeLesionMode.className = "badge badge-ungradable";
+      }
+      valOdStatus.textContent = "Halted";
+      if (valOdDetails) valOdDetails.textContent = "Downstream analysis withheld";
+      valFoveaStatus.textContent = "Halted";
+      if (valFoveaDetails) valFoveaDetails.textContent = "Downstream analysis withheld";
+      valVesselDensity.textContent = "N/A";
+      valMaCount.textContent = "N/A";
+      if (valMaNotes) valMaNotes.textContent = "Safety Gate Triggered";
+      valExCount.textContent = "N/A";
+      if (valExNotes) valExNotes.textContent = "Safety Gate Triggered";
+      valHeCount.textContent = "N/A";
+      if (valHeNotes) valHeNotes.textContent = "Safety Gate Triggered";
+      if (valSeCount) valSeCount.textContent = "N/A";
+      if (valSeNotes) valSeNotes.textContent = "Safety Gate Triggered";
+      valNvRisk.textContent = "N/A";
+
+      // Recommendation
       recTitle.textContent = "Safety Rejection Guidance";
       recBody.textContent = q.recommendation;
+
+      // Disable layer toggles for ungradable scans
+      layerToggles.style.display = "none";
+      layerLegend.style.display = "none";
+      currentOverlays = {};
 
       // Enable report download for ungradable record
       if (data.report) {
@@ -292,7 +426,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Borderline Alert
+    // 4. Borderline Alert (Gradable images with borderline quality)
     if (q.status === "BORDERLINE") {
       borderlineAlertBox.style.display = "block";
       borderlineAlertBox.innerHTML = `
@@ -301,13 +435,14 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }
 
-    // Landmarks & Lesions
+    // 5. Landmarks & Lesions
     const st = data.structures;
     const l = data.lesions;
 
     valOdStatus.textContent = `Centroid [${st.optic_disc.centroid.join(", ")}]`;
-    valOdDetails.textContent = `Radius: ${st.optic_disc.radius_px} px (Mask generated)`;
+    if (valOdDetails) valOdDetails.textContent = `Radius: ${st.optic_disc.radius_px} px (${st.optic_disc.methodology || "AI/Morphological Mask"})`;
     valFoveaStatus.textContent = `Coords [${st.fovea.coordinates.join(", ")}]`;
+    if (valFoveaDetails) valFoveaDetails.textContent = st.fovea.methodology || "Temporal Geometric Projection";
     valVesselDensity.textContent = `${st.vessels.density_percent}%`;
 
     // Render Mode Badge
@@ -351,21 +486,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     valNvRisk.textContent = `${l.neovascularization.risk_level} Risk`;
 
-    // DR Grading (EXP-001)
+    // 6. DR Grading (EXP-001)
     const g = data.grading;
     textGradeHeadline.textContent = `Grade ${g.grade} — ${g.severity_name}`;
     textGradeHeadline.style.color = getGradeColor(g.grade);
-    textGradeConfidence.textContent = `Confidence: ${g.confidence_percent}% (${g.confidence_level} Confidence) • Model: EXP-001`;
+
+    const ref = data.demo_reference;
+    if (ref && ref.reference_grade !== undefined && ref.reference_grade >= 0) {
+      if (demoComparisonBox) demoComparisonBox.style.display = "block";
+      if (valReferenceGrade) valReferenceGrade.textContent = `Grade ${ref.reference_grade} — ${ref.reference_name}`;
+      if (valAiPrediction) valAiPrediction.textContent = `Grade ${g.grade} — ${g.severity_name}`;
+      textGradeConfidence.textContent = `Confidence: ${g.confidence_percent}% (${g.confidence_level} Confidence) • Model: EXP-001`;
+    } else {
+      if (demoComparisonBox) demoComparisonBox.style.display = "none";
+      textGradeConfidence.textContent = `Confidence: ${g.confidence_percent}% (${g.confidence_level} Confidence) • Model: EXP-001`;
+    }
 
     if (g.referral) {
-      badgeReferralStatus.textContent = "REFERABLE DR";
+      badgeReferralStatus.textContent = "REFERABLE DR (YES)";
       badgeReferralStatus.className = "badge badge-referable";
     } else {
-      badgeReferralStatus.textContent = "NON-REFERABLE";
+      badgeReferralStatus.textContent = "NON-REFERABLE (NO)";
       badgeReferralStatus.className = "badge badge-non-referable";
     }
 
-    // Probabilities Bar Chart
+    // 7. Probabilities Bar Chart (Pure EXP-001 Softmax Output)
     probBarsContainer.innerHTML = "";
     g.probabilities.forEach(p => {
       const row = document.createElement("div");
@@ -381,16 +526,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     probabilitiesSection.style.display = "block";
 
-    // Recommendation
+    // 8. Recommendation
     recTitle.textContent = g.referral_action;
     recBody.textContent = g.recommendation;
 
-    // Store Overlays
-    currentOverlays = data.overlays;
+    // 9. Store Overlays
+    currentOverlays = data.overlays || {};
     layerToggles.style.display = "flex";
     setActiveLayer("original");
 
-    // Report Links
+    // 10. Report Links
     if (data.report) {
       setupReportLinks(data.report);
     }
