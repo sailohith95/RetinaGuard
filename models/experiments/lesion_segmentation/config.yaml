@@ -1,0 +1,18 @@
+anatomy_classes:
+- OD
+architecture: DualHeadUNet
+base_lr: 0.001
+batch_size: 4
+best_epoch: 15
+best_val_score: 0.29792230450793555
+dataset: IDRiD ISBI 2018 Challenge (Part A)
+image_size: 256
+input_channels: 3
+lesion_classes:
+- MA
+- HE
+- EX
+- SE
+loss: BCE + SoftDiceLoss
+num_epochs: 20
+optimizer: AdamW

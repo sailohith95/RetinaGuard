@@ -216,10 +216,11 @@
         </div>
       </div>
 
-      <!-- Panel 3: Retinal Landmarks & Lesion Candidates -->
+      <!-- Panel 3: Retinal Landmarks & Lesions -->
       <div class="card findings-card landmarks-card">
         <div class="card-header">
-          <span class="card-title">3. Landmarks & Lesion Candidates</span>
+          <span class="card-title">3. Landmarks & Lesions</span>
+          <span id="badge-lesion-mode" class="badge badge-neutral">PENDING</span>
         </div>
         <div class="card-body landmarks-card-body">
           <div class="landmarks-scroll-container">
@@ -235,7 +236,7 @@
                 <tr>
                   <td>Optic Disc</td>
                   <td id="val-od-status">--</td>
-                  <td id="val-od-details">Morphological Peak Luminance</td>
+                  <td id="val-od-details">Morphological Peak / AI Mask</td>
                 </tr>
                 <tr>
                   <td>Fovea Centralis</td>
@@ -250,17 +251,22 @@
                 <tr>
                   <td>Microaneurysms</td>
                   <td id="val-ma-count">--</td>
-                  <td>Candidate Detection (Top-hat)</td>
+                  <td id="val-ma-notes">Candidate Detection (Top-hat)</td>
                 </tr>
                 <tr>
                   <td>Hard Exudates</td>
                   <td id="val-ex-count">--</td>
-                  <td>Candidate Detection (Disc-masked)</td>
+                  <td id="val-ex-notes">Candidate Detection (Disc-masked)</td>
                 </tr>
                 <tr>
                   <td>Hemorrhages</td>
                   <td id="val-he-count">--</td>
-                  <td>Candidate Detection (Dark lesions)</td>
+                  <td id="val-he-notes">Candidate Detection (Dark lesions)</td>
+                </tr>
+                <tr id="row-soft-exudates">
+                  <td>Soft Exudates</td>
+                  <td id="val-se-count">--</td>
+                  <td id="val-se-notes">Cotton Wool Spots</td>
                 </tr>
                 <tr>
                   <td>NV Risk Indicator</td>

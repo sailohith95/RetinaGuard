@@ -1,0 +1,304 @@
+{
+  "train": {
+    "split": "Training Set",
+    "total_images": 54,
+    "image_list": [
+      "IDRiD_01.jpg",
+      "IDRiD_02.jpg",
+      "IDRiD_03.jpg",
+      "IDRiD_04.jpg",
+      "IDRiD_05.jpg",
+      "IDRiD_06.jpg",
+      "IDRiD_07.jpg",
+      "IDRiD_08.jpg",
+      "IDRiD_09.jpg",
+      "IDRiD_10.jpg",
+      "IDRiD_11.jpg",
+      "IDRiD_12.jpg",
+      "IDRiD_13.jpg",
+      "IDRiD_14.jpg",
+      "IDRiD_15.jpg",
+      "IDRiD_16.jpg",
+      "IDRiD_17.jpg",
+      "IDRiD_18.jpg",
+      "IDRiD_19.jpg",
+      "IDRiD_20.jpg",
+      "IDRiD_21.jpg",
+      "IDRiD_22.jpg",
+      "IDRiD_23.jpg",
+      "IDRiD_24.jpg",
+      "IDRiD_25.jpg",
+      "IDRiD_26.jpg",
+      "IDRiD_27.jpg",
+      "IDRiD_28.jpg",
+      "IDRiD_29.jpg",
+      "IDRiD_30.jpg",
+      "IDRiD_31.jpg",
+      "IDRiD_32.jpg",
+      "IDRiD_33.jpg",
+      "IDRiD_34.jpg",
+      "IDRiD_35.jpg",
+      "IDRiD_36.jpg",
+      "IDRiD_37.jpg",
+      "IDRiD_38.jpg",
+      "IDRiD_39.jpg",
+      "IDRiD_40.jpg",
+      "IDRiD_41.jpg",
+      "IDRiD_42.jpg",
+      "IDRiD_43.jpg",
+      "IDRiD_44.jpg",
+      "IDRiD_45.jpg",
+      "IDRiD_46.jpg",
+      "IDRiD_47.jpg",
+      "IDRiD_48.jpg",
+      "IDRiD_49.jpg",
+      "IDRiD_50.jpg",
+      "IDRiD_51.jpg",
+      "IDRiD_52.jpg",
+      "IDRiD_53.jpg",
+      "IDRiD_54.jpg"
+    ],
+    "image_dimensions": [
+      "4288x2848x3"
+    ],
+    "corrupt_images": [],
+    "classes": {
+      "MA": {
+        "display_name": "Microaneurysms",
+        "category": "Lesion",
+        "folder": "1. Microaneurysms",
+        "total_masks_found": 54,
+        "positive_images": 54,
+        "empty_masks": 0,
+        "missing_mask_files": 0,
+        "total_pixels_evaluated": 659460096,
+        "total_positive_pixels": 704963,
+        "pixel_coverage_pct": 0.1069,
+        "unique_values": [
+          0,
+          76
+        ],
+        "dimension_mismatches": [],
+        "positive_rate_pct": 100.0,
+        "empty_rate_pct": 0.0
+      },
+      "HE": {
+        "display_name": "Haemorrhages",
+        "category": "Lesion",
+        "folder": "2. Haemorrhages",
+        "total_masks_found": 53,
+        "positive_images": 53,
+        "empty_masks": 1,
+        "missing_mask_files": 1,
+        "total_pixels_evaluated": 647247872,
+        "total_positive_pixels": 6500485,
+        "pixel_coverage_pct": 1.0043,
+        "unique_values": [
+          0,
+          76
+        ],
+        "dimension_mismatches": [],
+        "positive_rate_pct": 98.15,
+        "empty_rate_pct": 1.85
+      },
+      "EX": {
+        "display_name": "Hard Exudates",
+        "category": "Lesion",
+        "folder": "3. Hard Exudates",
+        "total_masks_found": 54,
+        "positive_images": 54,
+        "empty_masks": 0,
+        "missing_mask_files": 0,
+        "total_pixels_evaluated": 659460096,
+        "total_positive_pixels": 5319524,
+        "pixel_coverage_pct": 0.8066,
+        "unique_values": [
+          0,
+          76
+        ],
+        "dimension_mismatches": [],
+        "positive_rate_pct": 100.0,
+        "empty_rate_pct": 0.0
+      },
+      "SE": {
+        "display_name": "Soft Exudates",
+        "category": "Lesion",
+        "folder": "4. Soft Exudates",
+        "total_masks_found": 26,
+        "positive_images": 26,
+        "empty_masks": 28,
+        "missing_mask_files": 28,
+        "total_pixels_evaluated": 317517824,
+        "total_positive_pixels": 1249041,
+        "pixel_coverage_pct": 0.3934,
+        "unique_values": [
+          0,
+          76
+        ],
+        "dimension_mismatches": [],
+        "positive_rate_pct": 48.15,
+        "empty_rate_pct": 51.85
+      },
+      "OD": {
+        "display_name": "Optic Disc",
+        "category": "Anatomy",
+        "folder": "5. Optic Disc",
+        "total_masks_found": 54,
+        "positive_images": 54,
+        "empty_masks": 0,
+        "missing_mask_files": 0,
+        "total_pixels_evaluated": 659460096,
+        "total_positive_pixels": 11906334,
+        "pixel_coverage_pct": 1.8055,
+        "unique_values": [
+          0,
+          76
+        ],
+        "dimension_mismatches": [],
+        "positive_rate_pct": 100.0,
+        "empty_rate_pct": 0.0
+      }
+    }
+  },
+  "test": {
+    "split": "Testing Set",
+    "total_images": 27,
+    "image_list": [
+      "IDRiD_55.jpg",
+      "IDRiD_56.jpg",
+      "IDRiD_57.jpg",
+      "IDRiD_58.jpg",
+      "IDRiD_59.jpg",
+      "IDRiD_60.jpg",
+      "IDRiD_61.jpg",
+      "IDRiD_62.jpg",
+      "IDRiD_63.jpg",
+      "IDRiD_64.jpg",
+      "IDRiD_65.jpg",
+      "IDRiD_66.jpg",
+      "IDRiD_67.jpg",
+      "IDRiD_68.jpg",
+      "IDRiD_69.jpg",
+      "IDRiD_70.jpg",
+      "IDRiD_71.jpg",
+      "IDRiD_72.jpg",
+      "IDRiD_73.jpg",
+      "IDRiD_74.jpg",
+      "IDRiD_75.jpg",
+      "IDRiD_76.jpg",
+      "IDRiD_77.jpg",
+      "IDRiD_78.jpg",
+      "IDRiD_79.jpg",
+      "IDRiD_80.jpg",
+      "IDRiD_81.jpg"
+    ],
+    "image_dimensions": [
+      "4288x2848x3"
+    ],
+    "corrupt_images": [],
+    "classes": {
+      "MA": {
+        "display_name": "Microaneurysms",
+        "category": "Lesion",
+        "folder": "1. Microaneurysms",
+        "total_masks_found": 27,
+        "positive_images": 27,
+        "empty_masks": 0,
+        "missing_mask_files": 0,
+        "total_pixels_evaluated": 329730048,
+        "total_positive_pixels": 323896,
+        "pixel_coverage_pct": 0.0982,
+        "unique_values": [
+          0,
+          76
+        ],
+        "dimension_mismatches": [],
+        "positive_rate_pct": 100.0,
+        "empty_rate_pct": 0.0
+      },
+      "HE": {
+        "display_name": "Haemorrhages",
+        "category": "Lesion",
+        "folder": "2. Haemorrhages",
+        "total_masks_found": 27,
+        "positive_images": 27,
+        "empty_masks": 0,
+        "missing_mask_files": 0,
+        "total_pixels_evaluated": 329730048,
+        "total_positive_pixels": 3516519,
+        "pixel_coverage_pct": 1.0665,
+        "unique_values": [
+          0,
+          76
+        ],
+        "dimension_mismatches": [],
+        "positive_rate_pct": 100.0,
+        "empty_rate_pct": 0.0
+      },
+      "EX": {
+        "display_name": "Hard Exudates",
+        "category": "Lesion",
+        "folder": "3. Hard Exudates",
+        "total_masks_found": 27,
+        "positive_images": 27,
+        "empty_masks": 0,
+        "missing_mask_files": 0,
+        "total_pixels_evaluated": 329730048,
+        "total_positive_pixels": 3577920,
+        "pixel_coverage_pct": 1.0851,
+        "unique_values": [
+          0,
+          76
+        ],
+        "dimension_mismatches": [],
+        "positive_rate_pct": 100.0,
+        "empty_rate_pct": 0.0
+      },
+      "SE": {
+        "display_name": "Soft Exudates",
+        "category": "Lesion",
+        "folder": "4. Soft Exudates",
+        "total_masks_found": 14,
+        "positive_images": 14,
+        "empty_masks": 13,
+        "missing_mask_files": 13,
+        "total_pixels_evaluated": 170971136,
+        "total_positive_pixels": 595892,
+        "pixel_coverage_pct": 0.3485,
+        "unique_values": [
+          0,
+          76
+        ],
+        "dimension_mismatches": [],
+        "positive_rate_pct": 51.85,
+        "empty_rate_pct": 48.15
+      },
+      "OD": {
+        "display_name": "Optic Disc",
+        "category": "Anatomy",
+        "folder": "5. Optic Disc",
+        "total_masks_found": 27,
+        "positive_images": 27,
+        "empty_masks": 0,
+        "missing_mask_files": 0,
+        "total_pixels_evaluated": 329730048,
+        "total_positive_pixels": 5708694,
+        "pixel_coverage_pct": 1.7313,
+        "unique_values": [
+          0,
+          76
+        ],
+        "dimension_mismatches": [],
+        "positive_rate_pct": 100.0,
+        "empty_rate_pct": 0.0
+      }
+    }
+  },
+  "summary": {
+    "total_images": 81,
+    "train_images": 54,
+    "test_images": 27,
+    "split_ratio": "54:27",
+    "is_official_split_preserved": true
+  }
+}

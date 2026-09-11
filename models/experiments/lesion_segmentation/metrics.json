@@ -1,0 +1,71 @@
+{
+  "MA": {
+    "name": "Microaneurysms",
+    "category": "Pathology",
+    "positive_test_images": 27,
+    "empty_mask_test_images": 0,
+    "dice": 0.0,
+    "iou": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "specificity": 1.0,
+    "mean_per_image_dice": 0.0
+  },
+  "HE": {
+    "name": "Haemorrhages",
+    "category": "Pathology",
+    "positive_test_images": 27,
+    "empty_mask_test_images": 0,
+    "dice": 0.0,
+    "iou": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "specificity": 1.0,
+    "mean_per_image_dice": 0.0
+  },
+  "EX": {
+    "name": "Hard Exudates",
+    "category": "Pathology",
+    "positive_test_images": 27,
+    "empty_mask_test_images": 0,
+    "dice": 0.0,
+    "iou": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "specificity": 1.0,
+    "mean_per_image_dice": 0.0
+  },
+  "SE": {
+    "name": "Soft Exudates",
+    "category": "Pathology",
+    "positive_test_images": 14,
+    "empty_mask_test_images": 13,
+    "dice": 0.0,
+    "iou": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "specificity": 1.0,
+    "mean_per_image_dice": 0.4815
+  },
+  "OD": {
+    "name": "Optic Disc (Anatomy)",
+    "category": "Anatomy",
+    "positive_test_images": 27,
+    "empty_mask_test_images": 0,
+    "dice": 0.9049,
+    "iou": 0.8264,
+    "precision": 0.8974,
+    "recall": 0.9126,
+    "specificity": 0.9982,
+    "mean_per_image_dice": 0.902
+  },
+  "summary": {
+    "dataset": "IDRiD ISBI 2018 (Part A)",
+    "num_test_images": 27,
+    "mean_lesion_dice": 0.0,
+    "mean_lesion_iou": 0.0,
+    "optic_disc_dice": 0.9049,
+    "optic_disc_iou": 0.8264,
+    "disclaimer": "RetinaGuard AI lesion segmentation is a research decision-support prototype evaluated on 27 test images. It does not provide an autonomous clinical diagnosis."
+  }
+}

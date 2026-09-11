@@ -53,15 +53,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const probabilitiesSection = document.getElementById("probabilities-section");
   const probBarsContainer = document.getElementById("prob-bars-container");
 
-  // Table
+  // Table & Lesions
+  const badgeLesionMode = document.getElementById("badge-lesion-mode");
   const valOdStatus = document.getElementById("val-od-status");
   const valOdDetails = document.getElementById("val-od-details");
   const valFoveaStatus = document.getElementById("val-fovea-status");
   const valFoveaDetails = document.getElementById("val-fovea-details");
   const valVesselDensity = document.getElementById("val-vessel-density");
   const valMaCount = document.getElementById("val-ma-count");
+  const valMaNotes = document.getElementById("val-ma-notes");
   const valExCount = document.getElementById("val-ex-count");
+  const valExNotes = document.getElementById("val-ex-notes");
   const valHeCount = document.getElementById("val-he-count");
+  const valHeNotes = document.getElementById("val-he-notes");
+  const valSeCount = document.getElementById("val-se-count");
+  const valSeNotes = document.getElementById("val-se-notes");
   const valNvRisk = document.getElementById("val-nv-risk");
 
   // Recommendation & Report
@@ -304,9 +310,45 @@ document.addEventListener("DOMContentLoaded", () => {
     valFoveaStatus.textContent = `Coords [${st.fovea.coordinates.join(", ")}]`;
     valVesselDensity.textContent = `${st.vessels.density_percent}%`;
 
-    valMaCount.textContent = `${l.microaneurysms.candidate_count} candidates`;
-    valExCount.textContent = `${l.hard_exudates.candidate_count} candidates (${l.hard_exudates.total_area_px} px)`;
-    valHeCount.textContent = `${l.hemorrhages.candidate_count} candidates (${l.hemorrhages.total_area_px} px)`;
+    // Render Mode Badge
+    if (badgeLesionMode) {
+      if (l.is_ai || l.mode === "AI SEGMENTATION") {
+        badgeLesionMode.textContent = "AI SEGMENTATION";
+        badgeLesionMode.className = "badge badge-good";
+      } else {
+        badgeLesionMode.textContent = "HEURISTIC FALLBACK";
+        badgeLesionMode.className = "badge badge-borderline";
+      }
+    }
+
+    if (l.is_ai || l.mode === "AI SEGMENTATION") {
+      valMaCount.textContent = `${l.microaneurysms.candidate_count} AI regions`;
+      if (valMaNotes) valMaNotes.textContent = "Dual-Head U-Net (IDRiD)";
+
+      valExCount.textContent = `${l.hard_exudates.candidate_count} AI regions (${l.hard_exudates.total_area_px} px)`;
+      if (valExNotes) valExNotes.textContent = "Dual-Head U-Net (IDRiD)";
+
+      valHeCount.textContent = `${l.hemorrhages.candidate_count} AI regions (${l.hemorrhages.total_area_px} px)`;
+      if (valHeNotes) valHeNotes.textContent = "Dual-Head U-Net (IDRiD)";
+
+      if (valSeCount) {
+        valSeCount.textContent = `${l.soft_exudates ? l.soft_exudates.candidate_count : 0} AI regions (${l.soft_exudates ? l.soft_exudates.total_area_px : 0} px)`;
+      }
+      if (valSeNotes) valSeNotes.textContent = "Dual-Head U-Net (IDRiD)";
+    } else {
+      valMaCount.textContent = `${l.microaneurysms.candidate_count} candidates`;
+      if (valMaNotes) valMaNotes.textContent = "Morphological Top-Hat";
+
+      valExCount.textContent = `${l.hard_exudates.candidate_count} candidates (${l.hard_exudates.total_area_px} px)`;
+      if (valExNotes) valExNotes.textContent = "Luminance / Disc-Masked";
+
+      valHeCount.textContent = `${l.hemorrhages.candidate_count} candidates (${l.hemorrhages.total_area_px} px)`;
+      if (valHeNotes) valHeNotes.textContent = "Dark Lesion Connected Comp";
+
+      if (valSeCount) valSeCount.textContent = "N/A in fallback";
+      if (valSeNotes) valSeNotes.textContent = "Heuristic Fallback";
+    }
+
     valNvRisk.textContent = `${l.neovascularization.risk_level} Risk`;
 
     // DR Grading (EXP-001)
